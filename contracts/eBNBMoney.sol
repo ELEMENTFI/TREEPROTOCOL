@@ -41,7 +41,7 @@ contract UFragments is  ERC20UpgradeSafe,OwnableUpgradeSafe{
 
     uint256 private constant DECIMALS = 1;
     uint256 private constant MAX_UINT256 = ~uint256(0);
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 25 * 10**5 * 10**DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 1 * 10**4 * 10**DECIMALS;
 
     // TOTAL_GONS is a multiple of INITIAL_FRAGMENTS_SUPPLY so that _gonsPerFragment is an integer.
     // Use the highest value that fits in a uint256 for max granularity.
@@ -58,15 +58,15 @@ contract UFragments is  ERC20UpgradeSafe,OwnableUpgradeSafe{
     // it's fully paid.
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
-    
+   
     function initialize()
         public
         initializer
     {
         ERC20UpgradeSafe.__ERC20_init("eBNTOKEN", "eBNBDEMO");
-        _mint(msg.sender, INITIAL_FRAGMENTS_SUPPLY);
+       
         OwnableUpgradeSafe.__Ownable_init();
-        
+       
         rebasePaused = false;
         tokenPaused = false;
 
@@ -84,7 +84,7 @@ contract UFragments is  ERC20UpgradeSafe,OwnableUpgradeSafe{
         emit LogMonetaryPolicyUpdated(monetaryPolicy_);
     }
 
-  
+ 
      function setRebasePaused(bool paused)
         external
         onlyOwner
@@ -271,6 +271,7 @@ contract UFragments is  ERC20UpgradeSafe,OwnableUpgradeSafe{
         emit Transfer(address(0), account, amount);
     }
 }
+
 
 
 

@@ -32,9 +32,6 @@ import "../../Initializable.sol";
  * allowances. See {IERC20-approve}.
  */
 abstract contract ERC20UpgradeSafe is ContextUpgradeSafe, IERC20 {
-    
-   
-
     string private _name;
     string private _symbol;
     uint8 private _decimals;
@@ -61,7 +58,7 @@ abstract contract ERC20UpgradeSafe is ContextUpgradeSafe, IERC20 {
        
 
     }
-    
+   
 
     /**
      * @dev Returns the name of the token.
@@ -99,3 +96,4 @@ abstract contract ERC20UpgradeSafe is ContextUpgradeSafe, IERC20 {
 
     uint256[44] private __gap;
 }
+

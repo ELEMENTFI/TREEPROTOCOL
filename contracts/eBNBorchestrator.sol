@@ -40,19 +40,20 @@ contract Orchestrator is OwnableUpgradeSafe {
      *         If a transaction in the transaction list reverts, it is swallowed and the remaining
      *         transactions are executed.
      */
-    function rebase()
+    function rebase(uint256 _targetRate,uint256 _valu)
         external
     {
         require(msg.sender == tx.origin);  // solhint-disable-line avoid-tx-origin
-
-        policy.rebase();
+        uint256 tRate = _targetRate;
+        uint256 eRate = _valu;
+        policy.rebase(tRate,eRate);
 
         for (uint i = 0; i < transactions.length; i++) {
             Transaction storage t = transactions[i];
             if (t.enabled) {
                 bool result =
                     externalCall(t.destination, t.data);
-                    
+                   
                 if (!result) {
                     emit TransactionFailed(t.destination, i, t.data);
                     revert("Transaction Failed");
