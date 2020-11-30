@@ -1,4 +1,5 @@
 pragma solidity >=0.6.8;
+pragma experimental ABIEncoderV2;
 // SPDX-License-Identifier: MIT
 import "./token/ERC20/ERC20.sol";
 import './math/UInt256Lib.sol';
@@ -9,11 +10,33 @@ import "./math/SafeMathInt.sol";
 import "./eBNBMoney.sol";
 
 
-/* interface Ioracle */
 interface IOracle {
     function getData() external returns (uint256, bool);
 }
-contract UFragmentsPolicy is OwnableUpgradeSafe {
+interface IStdReference {
+    /// A structure returned whenever someone requests for standard reference data.
+    struct ReferenceData {
+        uint256 rate; // base/quote exchange rate, multiplied by 1e18.
+        uint256 lastUpdatedBase; // UNIX epoch of the last time when base price gets updated.
+        uint256 lastUpdatedQuote; // UNIX epoch of the last time when quote price gets updated.
+    }
+
+    /// Returns the price data for the given base/quote pair. Revert if not available.
+    function getReferenceData(string memory _base, string memory _quote)
+        external
+        view
+        returns (ReferenceData memory);
+
+    /// Similar to getReferenceData, but with multiple base/quote pairs at once.
+    function getReferenceDataBulk(string[] memory _bases, string[] memory _quotes)
+        external
+        view
+        returns (ReferenceData[] memory);
+}
+contract eBNBPolicy is OwnableUpgradeSafe {
+    IStdReference internal ref;
+    uint256 public price;
+
     using SafeMath for uint256;
     using SafeMathInt for int256;
     using UInt256Lib for uint256;
@@ -27,7 +50,8 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
     );    
 
        
-        UFragments public uFrags;
+        eBNBdemo public uFrags;
+       
        
 
         // Provides the current CPI, as an 18 decimal fixed point number.
@@ -50,6 +74,8 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         // Check setRebaseLag comments for more details.
         // Natural number, no decimal places.
         uint256 public rebaseLag;
+        uint256 public supplyAfterRebase;
+        uint256 public exchangeRate;
 
         // More than this much time must pass between rebase operations.
         uint256 public minRebaseTimeIntervalSec;
@@ -59,10 +85,10 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
 
         // The rebase window begins this many seconds into the minRebaseTimeInterval period.
         // For example if minRebaseTimeInterval is 24hrs, it represents the time of day in seconds.
-        uint256 public rebaseWindowOffsetmin;
+        uint256 public rebaseWindowOffsetSec;
 
         // The length of the time window where a rebase operation is allowed to execute, in seconds.
-        uint256 public rebaseWindowLengthhours;
+        uint256 public rebaseWindowLengthSec;
 
         // The number of rebase cycles since inception
         uint256 public epoch;
@@ -74,7 +100,7 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         // Both are 18 decimals fixed point numbers.
         uint256 private constant MAX_RATE = 10**6 * 10**DECIMALS;
         // MAX_SUPPLY = MAX_INT256 / MAX_RATE
-        uint256 private constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
+        uint256 public constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
 
         // This module orchestrates the rebase execution and downstream notification.
         address public orchestrator;
@@ -91,8 +117,16 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
         *      and targetRate is CpiOracleRate / baseCpi
         */
+        function getPrice() external payable  returns (uint256){
+        IStdReference.ReferenceData memory data = ref.getReferenceData("BNB","USD");
+        price =data.rate;
+        return price;
+    }
+         
        
-        function rebase(uint256 _targetRate,uint256 _valu) external onlyOrchestrator {
+     
+        function rebase() external  {
+              exchangeRate=price;
             //require(inRebaseWindow());
 
             // This comparison also ensures there is no reentrancy.
@@ -104,16 +138,16 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
 
             epoch = epoch.add(1);
 
-            //uint256 cpi = 1;
+            uint256 cpi = 1;
             bool cpiValid = true;
             //(cpi, cpiValid) = cpiOracle.getData();
             require(cpiValid);
 
-            //uint256 targetRate = cpi.mul(10 ** DECIMALS).div(baseCpi);
-            uint256 targetRate = _targetRate;
-            uint256 sales = 100;
-            uint256 valu = _valu;
-            uint256 exchangeRate= valu / sales ;
+            uint256 targetRate = cpi.mul(10 ** DECIMALS);
+
+            //uint256 exchangeRate = 20000000000000000;
+           
+       
             bool rateValid = true;
             //(exchangeRate, rateValid) = marketOracle.getData();
             require(rateValid);
@@ -123,7 +157,7 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
             }
 
             int256 supplyDelta = computeSupplyDelta(exchangeRate, targetRate);
-
+           
             // Apply the Dampening factor.
             supplyDelta = supplyDelta.div(rebaseLag.toInt256Safe());
 
@@ -131,9 +165,10 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
                 supplyDelta = (MAX_SUPPLY.sub(uFrags.totalSupply())).toInt256Safe();
             }
 
-            uint256 supplyAfterRebase = uFrags.rebase(epoch, supplyDelta);
+            supplyAfterRebase = uFrags.rebase(epoch, supplyDelta);
             assert(supplyAfterRebase <= MAX_SUPPLY);
             emit LogRebase(epoch, exchangeRate, targetRate, supplyDelta, block.timestamp);
+           
            
         }
 
@@ -207,23 +242,23 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         *         c) the rebase window length parameter.
         * @param minRebaseTimeIntervalSec_ More than this much time must pass between rebase
         *        operations, in seconds.
-        * @param rebaseWindowOffsetmin_ The number of seconds from the beginning of
+        * @param rebaseWindowOffsetSec_ The number of seconds from the beginning of
                 the rebase interval, where the rebase window begins.
-        * @param rebaseWindowLengthhours_ The length of the rebase window in seconds.
+        * @param rebaseWindowLengthSec_ The length of the rebase window in seconds.
         */
          function setRebaseTimingParameters(
             uint256 minRebaseTimeIntervalSec_,
-            uint256 rebaseWindowOffsetmin_,
-            uint256 rebaseWindowLengthhours_)
+            uint256 rebaseWindowOffsetSec_,
+            uint256 rebaseWindowLengthSec_)
             external
             onlyOwner
         {
             require(minRebaseTimeIntervalSec_ > 0);
-            require(rebaseWindowOffsetmin_ < minRebaseTimeIntervalSec_);
+            require(rebaseWindowOffsetSec_ < minRebaseTimeIntervalSec_);
 
             minRebaseTimeIntervalSec = minRebaseTimeIntervalSec_;
-            rebaseWindowOffsetmin = rebaseWindowOffsetmin_;
-            rebaseWindowLengthhours = rebaseWindowLengthhours_;
+            rebaseWindowOffsetSec = rebaseWindowOffsetSec_;
+            rebaseWindowLengthSec = rebaseWindowLengthSec_;
         }
 
         /**
@@ -231,24 +266,26 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         *      It is called at the time of contract creation to invoke parent class initializers and
         *      initialize the contract's state variables.
         */
-       function initialize(UFragments uFrags_, uint256 baseCpi_)
+       function initialize(eBNBdemo uFrags_,IStdReference _ref)
             public
             initializer
         {
             OwnableUpgradeSafe.__Ownable_init();
+
 
             // deviationThreshold = 0.05e18 = 5e16
             deviationThreshold = 5 * 10 ** (DECIMALS-2);
 
             rebaseLag = 10;
             minRebaseTimeIntervalSec = 2 days;
-            rebaseWindowOffsetmin = 60;  // 8PM UTC
-            rebaseWindowLengthhours = 4;
+            rebaseWindowOffsetSec = 60 minutes;  // 8PM UTC
+            rebaseWindowLengthSec = 4 hours;
             lastRebaseTimestampSec = 0;
             epoch = 0;
 
             uFrags = uFrags_;
-            baseCpi = baseCpi_;
+            ref = _ref;
+           
         }
 
         /**
@@ -257,8 +294,8 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
         */
         function inRebaseWindow() public view returns (bool) {
             return (
-                block.timestamp.mod(minRebaseTimeIntervalSec) >= rebaseWindowOffsetmin &&
-                block.timestamp.mod(minRebaseTimeIntervalSec) < (rebaseWindowOffsetmin.add(rebaseWindowLengthhours))
+                block.timestamp.mod(minRebaseTimeIntervalSec) >= rebaseWindowOffsetSec &&
+                block.timestamp.mod(minRebaseTimeIntervalSec) < (rebaseWindowOffsetSec.add(rebaseWindowLengthSec))
             );
         }
 
@@ -299,4 +336,4 @@ contract UFragmentsPolicy is OwnableUpgradeSafe {
             return (rate >= targetRate && rate.sub(targetRate) < absoluteDeviationThreshold)
                 || (rate < targetRate && targetRate.sub(rate) < absoluteDeviationThreshold);
         }
-    }    
+    }
