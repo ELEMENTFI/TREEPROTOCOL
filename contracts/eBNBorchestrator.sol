@@ -5,7 +5,7 @@ pragma solidity >=0.4.24;
 import "./eBNBpolicy.sol";
 
 /**
- * @title Orchestrator
+ * @title eBNB Orchestrator
  * @notice The orchestrator is the main entry point for rebase operations. It coordinates the policy
  * actions with external consumers.
  */
