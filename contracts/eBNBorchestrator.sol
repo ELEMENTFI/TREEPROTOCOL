@@ -1,5 +1,4 @@
 // File: contracts/Orchestrator.sol
-
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.24;
 import "./eBNBpolicy.sol";
@@ -9,7 +8,7 @@ import "./eBNBpolicy.sol";
  * @notice The orchestrator is the main entry point for rebase operations. It coordinates the policy
  * actions with external consumers.
  */
-contract Orchestrator is OwnableUpgradeSafe {
+contract eBNBOrchestrator is OwnableUpgradeSafe {
 
     struct Transaction {
         bool enabled;
@@ -22,14 +21,14 @@ contract Orchestrator is OwnableUpgradeSafe {
     // Stable ordering is not guaranteed.
     Transaction[] public transactions;
 
-    UFragmentsPolicy public policy;
+    eBNBPolicy public policy;
 
     /**
      * @param policy_ Address of the UFragments policy.
      */
     function initialize(address policy_) public {
         OwnableUpgradeSafe.__Ownable_init();
-        policy = UFragmentsPolicy(policy_);
+        policy = eBNBPolicy(policy_);
     }
 
     /**
@@ -40,13 +39,11 @@ contract Orchestrator is OwnableUpgradeSafe {
      *         If a transaction in the transaction list reverts, it is swallowed and the remaining
      *         transactions are executed.
      */
-    function rebase(uint256 _targetRate,uint256 _valu)
+    function rebase()
         external
     {
         require(msg.sender == tx.origin);  // solhint-disable-line avoid-tx-origin
-        uint256 tRate = _targetRate;
-        uint256 eRate = _valu;
-        policy.rebase(tRate,eRate);
+        policy.rebase();
 
         for (uint i = 0; i < transactions.length; i++) {
             Transaction storage t = transactions[i];

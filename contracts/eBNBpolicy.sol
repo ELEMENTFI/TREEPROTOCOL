@@ -8,32 +8,14 @@ import "./ownership/Ownable.sol";
 import "./math/SafeMath.sol";
 import "./math/SafeMathInt.sol";
 import "./eBNBMoney.sol";
+import "../oracle/Bandprotocol.sol";
 
 
 interface IOracle {
     function getData() external returns (uint256, bool);
 }
-interface IStdReference {
-    /// A structure returned whenever someone requests for standard reference data.
-    struct ReferenceData {
-        uint256 rate; // base/quote exchange rate, multiplied by 1e18.
-        uint256 lastUpdatedBase; // UNIX epoch of the last time when base price gets updated.
-        uint256 lastUpdatedQuote; // UNIX epoch of the last time when quote price gets updated.
-    }
 
-    /// Returns the price data for the given base/quote pair. Revert if not available.
-    function getReferenceData(string memory _base, string memory _quote)
-        external
-        view
-        returns (ReferenceData memory);
-
-    /// Similar to getReferenceData, but with multiple base/quote pairs at once.
-    function getReferenceDataBulk(string[] memory _bases, string[] memory _quotes)
-        external
-        view
-        returns (ReferenceData[] memory);
-}
-contract eBNBPolicy is OwnableUpgradeSafe {
+contract eBNBPolicy is OwnableUpgradeSafe{
     IStdReference internal ref;
     uint256 public price;
 
@@ -126,7 +108,6 @@ contract eBNBPolicy is OwnableUpgradeSafe {
        
      
         function rebase() external  {
-              exchangeRate=price;
             //require(inRebaseWindow());
 
             // This comparison also ensures there is no reentrancy.
@@ -151,6 +132,8 @@ contract eBNBPolicy is OwnableUpgradeSafe {
             bool rateValid = true;
             //(exchangeRate, rateValid) = marketOracle.getData();
             require(rateValid);
+            exchangeRate = price;
+
 
             if (exchangeRate > MAX_RATE) {
                 exchangeRate = MAX_RATE;
