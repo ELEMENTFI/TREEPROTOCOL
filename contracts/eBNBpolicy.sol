@@ -1,7 +1,7 @@
 pragma solidity >=0.6.8;
 pragma experimental ABIEncoderV2;
 // SPDX-License-Identifier: MIT
-import "./token/ERC20/ERC20.sol";
+import "./token/BEP20/BEP20Token.sol";
 import './math/UInt256Lib.sol';
 import "./Initializable.sol";
 import "./ownership/Ownable.sol";

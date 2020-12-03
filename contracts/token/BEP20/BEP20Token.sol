@@ -2,13 +2,13 @@
 pragma solidity >=0.6.0;
 
 import "../../GSN/Context.sol";
-import "./IERC20.sol";
+import "./IBEP20.sol";
 import "../../math/SafeMath.sol";
 
 import "../../Initializable.sol";
 
 /**
- * @dev Implementation of the {IERC20} interface.
+ * @dev Implementation of the {IBEP20} interface.
  *
  * This implementation is agnostic to the way tokens are created. This means
  * that a supply mechanism has to be added in a derived contract using {_mint}.
@@ -31,7 +31,7 @@ import "../../Initializable.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-abstract contract ERC20UpgradeSafe is ContextUpgradeSafe, IERC20 {
+abstract contract BEP20Token is ContextUpgradeSafe,  IBEP20 {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
@@ -45,12 +45,12 @@ abstract contract ERC20UpgradeSafe is ContextUpgradeSafe, IERC20 {
      * construction.
      */
 
-    function __ERC20_init(string memory name, string memory symbol) internal initializer {
+    function __BEP20_init(string memory name, string memory symbol) internal initializer {
         __Context_init_unchained();
-        __ERC20_init_unchained(name, symbol);
+        __BEP20_init_unchained(name, symbol);
     }
 
-    function __ERC20_init_unchained(string memory name, string memory symbol) internal initializer {
+    function __BEP20_init_unchained(string memory name, string memory symbol) internal initializer {
 
 
         _name = name;

@@ -2,8 +2,8 @@ pragma solidity >=0.6.8;
 // SPDX-License-Identifier: MIT
 import "./ownership/Ownable.sol";
 import "./math/SafeMathInt.sol";
-import "./token/ERC20/ERC20.sol";
-contract eBNBdemo is  ERC20UpgradeSafe,OwnableUpgradeSafe{
+import "./token/BEP20/BEP20Token.sol";
+contract eBNBdemo is  BEP20Token,OwnableUpgradeSafe{
     using SafeMath for uint256;
     using SafeMathInt for int256;
    
@@ -64,7 +64,7 @@ contract eBNBdemo is  ERC20UpgradeSafe,OwnableUpgradeSafe{
         public
         initializer
     {
-        ERC20UpgradeSafe.__ERC20_init("TOKENeBNB", "eBNBDEMO");
+       BEP20Token.__BEP20_init("TOKENeBNB", "eBNBDEMO");
         OwnableUpgradeSafe.__Ownable_init();
        
         rebasePaused = false;
