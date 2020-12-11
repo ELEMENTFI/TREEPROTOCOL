@@ -3,7 +3,7 @@ pragma solidity >=0.6.8;
 import "./ownership/Ownable.sol";
 import "./math/SafeMathInt.sol";
 import "./token/BEP20/BEP20Token.sol";
-contract eBNBdemo is  BEP20Token,OwnableUpgradeSafe{
+contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     using SafeMath for uint256;
     using SafeMathInt for int256;
    
@@ -55,7 +55,7 @@ contract eBNBdemo is  BEP20Token,OwnableUpgradeSafe{
     uint256 public _gonsPerFragment;
     mapping(address => uint256) private _gonBalances;
 
-    // This is denominated in Fragments, because the gons-fragments conversion might change before
+    // This is denominated in eBNB, because the gons-fragments conversion might change before
     // it's fully paid.
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
@@ -94,8 +94,8 @@ contract eBNBdemo is  BEP20Token,OwnableUpgradeSafe{
     }
 
     /**
-     * @dev Pauses or unpauses execution of ERC-20 transactions.
-     * @param paused Pauses ERC-20 transactions if this is true.
+     * @dev Pauses or unpauses execution of BEP-20 transactions.
+     * @param paused Pauses BEP-20 transactions if this is true.
      */
     function setTokenPaused(bool paused)
         external
@@ -206,7 +206,7 @@ contract eBNBdemo is  BEP20Token,OwnableUpgradeSafe{
 
     /**
      * @dev Approve the passed address to spend the specified amount of tokens on behalf of
-     * msg.sender. This method is included for ERC20 compatibility.
+     * msg.sender. This method is included for BEP20 compatibility.
      * increaseAllowance and decreaseAllowance should be used instead.
      * Changing an allowance with this method brings the risk that someone may transfer both
      * the old and the new allowance - if they are both greater than zero - if a transfer

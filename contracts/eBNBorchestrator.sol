@@ -5,7 +5,7 @@ import "./eBNBpolicy.sol";
 
 /**
  * @title eBNB Orchestrator
- * @notice The orchestrator is the main entry point for rebase operations. It coordinates the policy
+ * @notice The eBNBorchestrator is the main entry point for rebase operations. It coordinates the policy
  * actions with external consumers.
  */
 contract eBNBOrchestrator is OwnableUpgradeSafe {
@@ -24,7 +24,7 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
     eBNBPolicy public policy;
 
     /**
-     * @param policy_ Address of the UFragments policy.
+     * @param policy_ Address of the  eBNBpolicy.
      */
     function initialize(address policy_) public {
         OwnableUpgradeSafe.__Ownable_init();
@@ -33,7 +33,7 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
 
     /**
      * @notice Main entry point to initiate a rebase operation.
-     *         The Orchestrator calls rebase on the policy and notifies downstream applications.
+     *         The eBNBOrchestrator calls rebase on the policy and notifies downstream applications.
      *         Contracts are guarded from calling, to avoid flash loan attacks on liquidity
      *         providers.
      *         If a transaction in the transaction list reverts, it is swallowed and the remaining

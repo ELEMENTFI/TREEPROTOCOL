@@ -6,7 +6,7 @@ import "./BEP20Token.sol";
 import "../../Initializable.sol";
 
 /**
- * @dev Extension of {ERC20} that allows token holders to destroy both their own
+ * @dev Extension of {BEP20} that allows token holders to destroy both their own
  * tokens and those that they have an allowance for, in a way that can be
  * recognized off-chain (via event analysis).
  */
@@ -24,7 +24,7 @@ abstract contract BEP20BurnableUpgradeSafe is Initializable, ContextUpgradeSafe,
     /**
      * @dev Destroys `amount` tokens from the caller.
      *
-     * See {ERC20-_burn}.
+     * See {BEP20-_burn}.
      */
    
 
@@ -32,7 +32,7 @@ abstract contract BEP20BurnableUpgradeSafe is Initializable, ContextUpgradeSafe,
      * @dev Destroys `amount` tokens from `account`, deducting from the caller's
      * allowance.
      *
-     * See {ERC20-_burn} and {ERC20-allowance}.
+     * See {BEP20-_burn} and {BEP20-allowance}.
      *
      * Requirements:
      *

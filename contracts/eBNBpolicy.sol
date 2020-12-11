@@ -32,7 +32,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
     );    
 
        
-        eBNBdemo public uFrags;
+        eBNB public uFrags;
        
        
 
@@ -84,7 +84,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         // MAX_SUPPLY = MAX_INT256 / MAX_RATE
         uint256 public constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
 
-        // This module orchestrates the rebase execution and downstream notification.
+        // This module eBNBorchestrates the rebase execution and downstream notification.
         address public orchestrator;
 
         modifier onlyOrchestrator() {
@@ -178,8 +178,8 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         }
 
         /**
-        * @notice Sets the reference to the orchestrator.
-        * @param orchestrator_ The address of the orchestrator contract.
+        * @notice Sets the reference to the eBNBorchestrator.
+        * @param orchestrator_ The address of the eBNBorchestrator contract.
         */
         function setOrchestrator(address orchestrator_)
             external
@@ -249,7 +249,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         *      It is called at the time of contract creation to invoke parent class initializers and
         *      initialize the contract's state variables.
         */
-       function initialize(eBNBdemo uFrags_,IStdReference _ref)
+       function initialize(eBNB uFrags_,IStdReference _ref)
             public
             initializer
         {
@@ -259,7 +259,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             // deviationThreshold = 0.05e18 = 5e16
             deviationThreshold = 5 * 10 ** (DECIMALS-2);
 
-            rebaseLag = 10;
+            rebaseLag = 50;
             minRebaseTimeIntervalSec = 2 days;
             rebaseWindowOffsetSec = 60 minutes;  // 8PM UTC
             rebaseWindowLengthSec = 4 hours;
