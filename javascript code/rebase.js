@@ -213,6 +213,7 @@ const privateKey1 = Buffer.from(process.env.PRIVATE_KEY_1,'hex')
 const privateKey2 = Buffer.from(process.env.PRIVATE_KEY_2,'hex')
 const contract = new web3.eth.Contract(abiArray,contractAddress)
 const Rebase = contract.methods.rebase().encodeABI()
+web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"ether"))})
 
 function rebase(){
 web3.eth.getTransactionCount(account1, (err,txCount) => {
@@ -236,5 +237,7 @@ web3.eth.getTransactionCount(account1, (err,txCount) => {
 
 console.log(txObject)
 })
+web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"ether"))})
+
 }
 setInterval(rebase,60000)
