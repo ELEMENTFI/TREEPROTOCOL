@@ -104,6 +104,9 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         tokenPaused = paused;
         emit LogTokenPaused(paused);
     }
+    /*
+    After calling rebase function it will call the tranferfrom function for distrube the free coins
+    */
     function rebase(uint256 epoch, int256 supplyDelta)
         external
         onlyMonetaryPolicy
