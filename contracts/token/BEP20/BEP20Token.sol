@@ -29,7 +29,7 @@ import "../../Initializable.sol";
  *
  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
  * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
+ * allowances. See {IBEP20-approve}.
  */
 abstract contract BEP20Token is ContextUpgradeSafe,  IBEP20 {
     string private _name;
@@ -86,7 +86,7 @@ abstract contract BEP20Token is ContextUpgradeSafe,  IBEP20 {
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
+     * {IBEP20-balanceOf} and {IBEP20-transfer}.
      */
     function decimals() public view returns (uint8) {
         return _decimals;
