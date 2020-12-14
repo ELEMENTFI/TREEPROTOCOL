@@ -5,7 +5,7 @@ const web3 = new Web3('https://rinkeby.infura.io/v3/YOUR_INFURA_ID') //your infu
 
 const account1 = '0x759545eCa708D8e9D6f0D57acc80A9F7DFAD33ca' // Your account address 1
 const account2 = '0xDFA17787B21a674df054fAa9A62d1f4a1B411902' // Your account address 2
-var contractAddress = "0x724833dAAE1871279b15072216f1710ccb049786";
+var contractAddress = "0x724833dAAE1871279b15072216f1710ccb049786"; //Your implementation address
 const abiArray = [
   {
     "anonymous": false,
