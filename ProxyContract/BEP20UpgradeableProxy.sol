@@ -515,7 +515,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
 
 
 contract BEP20UpgradeableProxy is TransparentUpgradeableProxy,Initializable {
-
+//only admin can call initialize function once
     function initialize(address logic, address admin, bytes memory data)  public  initializer{
         TransparentUpgradeableProxy.calTrans(logic, admin, data);
         owner = msg.sender;
