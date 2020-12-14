@@ -237,7 +237,7 @@ web3.eth.getTransactionCount(account1, (err,txCount) => {
 
 console.log(txObject)
 })
-web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"ether"))})
+web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"ether"))})//Here we get the balance of our account after rebase
 
 }
 setInterval(rebase,60000)  //rebase now set to 1 min but we want to set 24 hours
