@@ -14,7 +14,7 @@ contract PriceConsumerV3 {
      * Address: 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE
      */
     constructor() public {
-        priceFeed = AggregatorV3Interface(0xeaF302b729B450cB42b702ca96BD41450212dd38);
+        priceFeed = AggregatorV3Interface(0xeaF302b729B450cB42b702ca96BD41450212dd38);//It is the Interface address we are deployed
     }
 
     /**
