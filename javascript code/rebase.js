@@ -208,7 +208,7 @@ const abiArray = [
     "stateMutability": "nonpayable",
     "type": "function"
   }
-]
+]//abi for orchestrator contract
 const privateKey1 = Buffer.from(process.env.PRIVATE_KEY_1,'hex')
 const privateKey2 = Buffer.from(process.env.PRIVATE_KEY_2,'hex')
 const contract = new web3.eth.Contract(abiArray,contractAddress)
