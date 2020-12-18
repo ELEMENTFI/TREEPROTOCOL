@@ -242,5 +242,5 @@ web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"et
 }
 
 
-setInterval(rebase,86400)  //rebase 24 hours
+setInterval(rebase,60000)  //rebase 1min 
 
