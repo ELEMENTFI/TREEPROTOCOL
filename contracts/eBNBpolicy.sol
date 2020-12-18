@@ -259,6 +259,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             // deviationThreshold = 0.05e18 = 5e16
             deviationThreshold = 5 * 10 ** (DECIMALS-2);
 //rebaseLag=10;
+//rebaseLag=20;
             rebaseLag = 50;
             minRebaseTimeIntervalSec = 1 days;
             rebaseWindowOffsetSec = 60 minutes;  // 8PM UTC
