@@ -240,4 +240,7 @@ console.log(txObject)
 web3.eth.getBalance(account1 ,(err,bal)=>{console.log(web3.utils.fromWei(bal,"ether"))})//Here we get the balance of our account after rebase
 
 }
+
+
 setInterval(rebase,86400)  //rebase 24 hours
+
