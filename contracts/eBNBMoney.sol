@@ -65,7 +65,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
    //Initialize Token name,Symbol and TotalSupply.
    /*Token name ="eBNBMoneyProtocol";
      Token Symbol = "eBNB";
-     Token Supply ="30000000";
+     Total Supply ="30000000";
     */
     function initialize()
         public
