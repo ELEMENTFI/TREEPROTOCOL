@@ -11,14 +11,9 @@ import "./eBNBMoney.sol";
 import "../oracle/Bandprotocol.sol";
 
 
-interface IOracle {
-    function getData() external returns (uint256, bool);
-}
-
 contract eBNBPolicy is OwnableUpgradeSafe{
     IStdReference internal ref;
     uint256 public price;
-
     using SafeMath for uint256;
     using SafeMathInt for int256;
     using UInt256Lib for uint256;
@@ -31,19 +26,9 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         uint256 timestampSec        
     );    
 
-       
-        eBNB public uFrags;
-       
-       
-
-        // Provides the current CPI, as an 18 decimal fixed point number.
-        IOracle public cpiOracle;
-
-        // Market oracle provides the token/USD exchange rate as an 18 decimal fixed point number.
-        // (eg) An oracle value of 1.5e18 it would mean 1 Ample is trading for $1.50.
-        IOracle public marketOracle;
-
-        // CPI value at the time of launch, as an 18 decimal fixed point number.
+       //reference for eBNB
+         eBNB public eBNBmoney;
+      // CPI value at the time of launch, as an 18 decimal fixed point number.
         uint256 private baseCpi;
 
         // If the current exchange rate is within this fractional distance from the target, no supply
@@ -53,28 +38,25 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         uint256 public deviationThreshold;
 
         // The rebase lag parameter, used to dampen the applied supply adjustment by 1 / rebaseLag
-        // Check setRebaseLag comments for more details.
-        // Natural number, no decimal places.
         uint256 public rebaseLag;
         uint256 public supplyAfterRebase;
         uint256 public exchangeRate;
 
-        // More than this much time must pass between rebase operations.
-        uint256 public minRebaseTimeIntervalSec;
-
+        // Minimum time taken for rebase operation.
+         uint256 public minRebaseTimeIntervalmin;
+        
         // Block timestamp of last rebase operation
-        uint256 public lastRebaseTimestampSec;
+        uint256 public lastRebaseTimestampmin;
 
-        // The rebase window begins this many seconds into the minRebaseTimeInterval period.
-        // For example if minRebaseTimeInterval is 24hrs, it represents the time of day in seconds.
-        uint256 public rebaseWindowOffsetSec;
+        // The rebase window begins this many minutes into the minRebaseTimeInterval period.
+        // For example if minRebaseTimeInterval is 24hrs, it represents the time of day in minutes.
+        uint256 public rebaseWindowOffsetmin;
 
-        // The length of the time window where a rebase operation is allowed to execute, in seconds.
-        uint256 public rebaseWindowLengthSec;
+        // The length of the time window where a rebase operation is allowed to execute, in hours.
+        uint256 public rebaseWindowLengthhours;
 
         // The number of rebase cycles since inception
         uint256 public epoch;
-
         uint256 private constant DECIMALS = 18;
        
 
@@ -84,53 +66,62 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         // MAX_SUPPLY = MAX_INT256 / MAX_RATE
         uint256 public constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
 
-        // This module eBNBorchestrates the rebase execution and downstream notification.
-        address public orchestrator;
+        // eBNBOrchestrator Authentication
+        address public eBNBorchestratorref;
 
-        modifier onlyOrchestrator() {
-            require(msg.sender == orchestrator);
+        modifier onlyeBNBOrchestrator() {
+            require(msg.sender == eBNBorchestratorref);
             _;
         }
 
-        /**
-        * @notice Initiates a new rebase operation, provided the minimum time period has elapsed.
-        *
-        * @dev The supply adjustment equals (_totalSupply * DeviationFromTargetRate) / rebaseLag
-        *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
-        *      and targetRate is CpiOracleRate / baseCpi
-        */
+         //Initialize eBNBpolicy
+       function initialize(eBNB eBNBmoney_,IStdReference _ref)
+            public
+            initializer
+        {
+            OwnableUpgradeSafe.__Ownable_init();
+           deviationThreshold = 5 * 10 ** (DECIMALS-2);
+           rebaseLag = 50;
+            minRebaseTimeIntervalmin = 1 days;
+            rebaseWindowOffsetmin = 60 minutes;  
+            rebaseWindowLengthhours = 4 hours;
+            lastRebaseTimestampmin = 0;
+            epoch = 0;
+            eBNBmoney = eBNBmoney_;
+            ref = _ref;
+           
+        }
+       
         function getPrice() external payable  returns (uint256){
         IStdReference.ReferenceData memory data = ref.getReferenceData("BNB","USD");
         price =data.rate;
         return price;
     }
          
-       
+        /**
+        *Initiates a new rebase operation, provided the minimum time period has elapsed.
+        *
+        *      The supply adjustment equals (_totalSupply * DeviationFromTargetRate) / rebaseLag
+        *      Where DeviationFromTargetRate is (MarketOracleRate - targetRate) / targetRate
+        *      and targetRate is CpiOracleRate / baseCpi
+        */
      
-        function rebase() external  {
-            //require(inRebaseWindow());
+        function rebase() external  onlyeBNBOrchestrator  {
+            require(inRebaseWindow());
 
             // This comparison also ensures there is no reentrancy.
-           // require(lastRebaseTimestampSec.add(minRebaseTimeIntervalSec) < block.timestamp);
+           require(lastRebaseTimestampmin.add(minRebaseTimeIntervalmin) < block.timestamp);
 
             // Snap the rebase time to the start of this window.
-            //lastRebaseTimestampSec = block.timestamp.sub(
-                //block.timestamp.mod(minRebaseTimeIntervalSec)).add(rebaseWindowOffsetSec);
-
+            lastRebaseTimestampmin = block.timestamp.sub( block.timestamp.mod(minRebaseTimeIntervalmin)).add(rebaseWindowOffsetmin);
             epoch = epoch.add(1);
 
             uint256 cpi = 1;
             bool cpiValid = true;
-            //(cpi, cpiValid) = cpiOracle.getData();
-            require(cpiValid);
-
-            uint256 targetRate = cpi.mul(10 ** DECIMALS);
-
-            //uint256 exchangeRate = 20000000000000000;
            
-       
+            require(cpiValid);
+            uint256 targetRate = cpi.mul(10 ** DECIMALS);
             bool rateValid = true;
-            //(exchangeRate, rateValid) = marketOracle.getData();
             require(rateValid);
             exchangeRate = price;
 
@@ -144,11 +135,11 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             // Apply the Dampening factor.
             supplyDelta = supplyDelta.div(rebaseLag.toInt256Safe());
 
-            if (supplyDelta > 0 && uFrags.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
-                supplyDelta = (MAX_SUPPLY.sub(uFrags.totalSupply())).toInt256Safe();
+            if (supplyDelta > 0 && eBNBmoney.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
+                supplyDelta = (MAX_SUPPLY.sub(eBNBmoney.totalSupply())).toInt256Safe();
             }
 
-            supplyAfterRebase = uFrags.rebase(epoch, supplyDelta);
+            supplyAfterRebase = eBNBmoney.rebase(epoch, supplyDelta);
             assert(supplyAfterRebase <= MAX_SUPPLY);
             emit LogRebase(epoch, exchangeRate, targetRate, supplyDelta, block.timestamp);
            
@@ -156,36 +147,14 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         }
 
         /**
-        * @notice Sets the reference to the CPI oracle.
-        * @param cpiOracle_ The address of the cpi oracle contract.
-        */
-      function setCpiOracle(IOracle cpiOracle_)
-            external
-            onlyOwner
-        {
-            cpiOracle = cpiOracle_;
-        }
-
-        /**
-        * @notice Sets the reference to the market oracle.
-        * @param marketOracle_ The address of the market oracle contract.
-        */
-        function setMarketOracle(IOracle marketOracle_)
-            external
-            onlyOwner
-        {
-            marketOracle = marketOracle_;
-        }
-
-        /**
         * @notice Sets the reference to the eBNBorchestrator.
-        * @param orchestrator_ The address of the eBNBorchestrator contract.
+        * @param eBNBorchestratorref_ The address of the eBNBorchestrator contract.
         */
-        function setOrchestrator(address orchestrator_)
+        function setOrchestrator(address eBNBorchestratorref_)
             external
             onlyOwner
         {
-            orchestrator = orchestrator_;
+            eBNBorchestratorref = eBNBorchestratorref_;
         }
 
         /**
@@ -239,38 +208,11 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             require(minRebaseTimeIntervalSec_ > 0);
             require(rebaseWindowOffsetSec_ < minRebaseTimeIntervalSec_);
 
-            minRebaseTimeIntervalSec = minRebaseTimeIntervalSec_;
-            rebaseWindowOffsetSec = rebaseWindowOffsetSec_;
-            rebaseWindowLengthSec = rebaseWindowLengthSec_;
+            minRebaseTimeIntervalmin = minRebaseTimeIntervalSec_;
+            rebaseWindowOffsetmin = rebaseWindowOffsetSec_;
+            rebaseWindowLengthhours = rebaseWindowLengthSec_;
         }
 
-        /**
-        * @dev ZOS upgradable contract initialization method.
-        *      It is called at the time of contract creation to invoke parent class initializers and
-        *      initialize the contract's state variables.
-        */
-       function initialize(eBNB uFrags_,IStdReference _ref)
-            public
-            initializer
-        {
-            OwnableUpgradeSafe.__Ownable_init();
-
-
-            // deviationThreshold = 0.05e18 = 5e16
-            deviationThreshold = 5 * 10 ** (DECIMALS-2);
-//rebaseLag=10;
-//rebaseLag=20;
-            rebaseLag = 50;
-            minRebaseTimeIntervalSec = 1 days;
-            rebaseWindowOffsetSec = 60 minutes;  // 8PM UTC
-            rebaseWindowLengthSec = 4 hours;
-            lastRebaseTimestampSec = 0;
-            epoch = 0;
-
-            uFrags = uFrags_;
-            ref = _ref;
-           
-        }
 
         /**
         * @return If the latest block timestamp is within the rebase time window it, returns true.
@@ -278,8 +220,8 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         */
         function inRebaseWindow() public view returns (bool) {
             return (
-                block.timestamp.mod(minRebaseTimeIntervalSec) >= rebaseWindowOffsetSec &&
-                block.timestamp.mod(minRebaseTimeIntervalSec) < (rebaseWindowOffsetSec.add(rebaseWindowLengthSec))
+                block.timestamp.mod(minRebaseTimeIntervalmin) >= rebaseWindowOffsetmin &&
+                block.timestamp.mod(minRebaseTimeIntervalmin) < (rebaseWindowOffsetmin.add(rebaseWindowLengthhours))
             );
         }
 
@@ -298,15 +240,15 @@ contract eBNBPolicy is OwnableUpgradeSafe{
 
             // supplyDelta = totalSupply * (rate - targetRate) / targetRate
             int256 targetRateSigned = targetRate.toInt256Safe();
-            return  uFrags.totalSupply().toInt256Safe()
+            return  eBNBmoney.totalSupply().toInt256Safe()
                 .mul(rate.toInt256Safe().sub(targetRateSigned))
                 .div(targetRateSigned);
         }
 
         /**
-        * @param rate The current exchange rate, an 18 decimal fixed point number.
-        * @param targetRate The target exchange rate, an 18 decimal fixed point number.
-        * @return If the rate is within the deviation threshold from the target rate, returns true.
+        *  current exchange rate is  an 18 decimal fixed point number.
+        *  The target exchange rate is an 18 decimal fixed point number.
+        *  If the rate is within the deviation threshold from the target rate, returns true.
         *         Otherwise, returns false.
         */
        function withinDeviationThreshold(uint256 rate, uint256 targetRate)
