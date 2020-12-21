@@ -1,6 +1,4 @@
 
-// File: openzeppelin-solidity/contracts/proxy/Proxy.sol
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.0;
@@ -85,7 +83,7 @@ abstract contract Proxy {
     }
 }
 
-// File: openzeppelin-solidity/contracts/utils/Address.sol
+
 
 
 
@@ -227,7 +225,6 @@ library Address {
     }
 }
 
-// File: openzeppelin-solidity/contracts/proxy/UpgradeableProxy.sol
 
 contract Initializable {
 
@@ -352,8 +349,6 @@ contract UpgradeableProxy is Proxy {
         }
     }
 }
-
-// File: openzeppelin-solidity/contracts/proxy/TransparentUpgradeableProxy.sol
 
 
 
@@ -509,9 +504,6 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
         super._beforeFallback();
     }
 }
-
-// File: contracts/BEP20UpgradeableProxy.sol
-
 
 
 contract BEP20UpgradeableProxy is TransparentUpgradeableProxy,Initializable {
