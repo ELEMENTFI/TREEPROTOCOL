@@ -1,11 +1,11 @@
-// File: contracts/Orchestrator.sol
+
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.24;
 import "./eBNBpolicy.sol";
 
 /**
  * @title eBNB Orchestrator
- * @notice The eBNBorchestrator is the main entry point for rebase operations. It coordinates the policy
+ * @notice The eBNBorchestrator is the main entry point for rebase operations. It coordinates the eBNBpolicyref
  * actions with external consumers.
  */
 contract eBNBOrchestrator is OwnableUpgradeSafe {
@@ -21,19 +21,19 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
     // Stable ordering is not guaranteed.
     Transaction[] public transactions;
 
-    eBNBPolicy public policy;
+    eBNBPolicy public eBNBpolicyref;
 
     /**
-     * @param policy_ Address of the  eBNBpolicy.
+     * @param eBNBpolicyref_ Address of the  eBNBpolicy.
      */
-    function initialize(address policy_) public {
+    function initialize(address eBNBpolicyref_) public {
         OwnableUpgradeSafe.__Ownable_init();
-        policy = eBNBPolicy(policy_);
+        eBNBpolicyref = eBNBPolicy(eBNBpolicyref_);
     }
 
     /**
      * @notice Main entry point to initiate a rebase operation.
-     *         The eBNBOrchestrator calls rebase on the policy and notifies downstream applications.
+     *         The eBNBOrchestrator calls rebase on the eBNBpolicyref and notifies downstream applications.
      *         Contracts are guarded from calling, to avoid flash loan attacks on liquidity
      *         providers.
      *         If a transaction in the transaction list reverts, it is swallowed and the remaining
@@ -42,8 +42,8 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
     function rebase()
         external
     {
-        require(msg.sender == tx.origin);  // solhint-disable-line avoid-tx-origin
-        policy.rebase();
+        require(msg.sender == tx.origin); 
+        eBNBpolicyref.rebase();
 
         for (uint i = 0; i < transactions.length; i++) {
             Transaction storage t = transactions[i];
@@ -126,7 +126,7 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
         returns (bool)
     {
         bool result;
-        assembly {  // solhint-disable-line no-inline-assembly
+        assembly {  
             // "Allocate" memory for output
             // (0x40 is where "free memory" pointer is stored by convention)
             let outputAddress := mload(0x40)
@@ -140,8 +140,6 @@ contract eBNBOrchestrator is OwnableUpgradeSafe {
                 // + callValueTransferGas (9000) + callNewAccountGas
                 // (25000, in case the destination address does not exist and needs creating)
                 sub(gas() ,34710),
-
-
                 destination,
                 0, // transfer value in wei
                 dataAddress,
