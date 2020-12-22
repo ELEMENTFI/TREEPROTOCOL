@@ -63,7 +63,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
    //Initialize Token name,Symbol and TotalSupply.
-   /*Token name ="eBNBMoneyProtocol";
+   /*Token name ="eBNB";
      Token Symbol = "eBNB";
      Total Supply ="30000000";
     */
@@ -71,7 +71,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         public
         initializer
     {
-       BEP20Token.__BEP20_init("eBNBMoneyProtocol", "eBNB");
+       BEP20Token.__BEP20_init("eBNB", "eBNB");
         OwnableUpgradeSafe.__Ownable_init();
         rebasePaused = false;
         tokenPaused = false;
