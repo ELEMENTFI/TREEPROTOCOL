@@ -3,7 +3,8 @@ const {mnemonic} = require('./secrets.json');
 
 require("@nomiclabs/hardhat-ethers");
 require('@openzeppelin/hardhat-upgrades');
-
+require("@nomiclabs/hardhat-truffle5");
+require("@nomiclabs/hardhat-web3");
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
