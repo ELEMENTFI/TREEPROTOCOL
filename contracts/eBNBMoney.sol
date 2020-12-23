@@ -11,13 +11,10 @@ import "./token/BEP20/BEP20Token.sol";
 contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     using SafeMath for uint256;
     using SafeMathInt for int256;
-   
-
-   
     address public eBNBPolicyAuthentication;
     /*
      events emitted during function calls
-    LogRebase,LogRebasePaused,LogTokenPaused,LogMonetaryPolicyUpdated 
+    LogRebase,Log RebasePaused,LogTokenPaused,LogMonetaryPolicyUpdated 
    */
     event LogRebase(uint256 indexed epoch, uint256 totalSupply);
     event LogRebasePaused(bool paused);
@@ -57,8 +54,6 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
 
     uint256 private constant DECIMALS = 1;
     uint256 private constant MAX_UINT256 = ~uint256(0);
-
-    
     uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 12 * 10**5 * 10**DECIMALS;
 
     // TOTAL_GONS value is integer value of INITIAL_FRAGMENTS_SUPPLY.
@@ -226,8 +221,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         returns (bool)
     {
         _allowedFragments[from][msg.sender] = _allowedFragments[from][msg.sender].sub(value);
-
-        uint256 gonValue = value.mul(_gonsPerFragment);
+         uint256 gonValue = value.mul(_gonsPerFragment);
         _gonBalances[from] = _gonBalances[from].sub(gonValue);
         _gonBalances[to] = _gonBalances[to].add(gonValue);
         emit Transfer(from, to, value);

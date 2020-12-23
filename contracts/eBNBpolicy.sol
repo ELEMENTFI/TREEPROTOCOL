@@ -31,56 +31,68 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         uint256 timestampSec        
     );    
 
-       //reference for eBNB
+      /*
+        * eBNBmoney refers  eBNB contract 
+        * eBNBmoney is used in Initialize()
+        * CPI value- at the time of launch CPI value set  as an 18 decimal fixed point number.
+      */
          eBNB public eBNBmoney;
-      // CPI value at the time of launch, as an 18 decimal fixed point number.
-        uint256 private baseCpi;
-
-        // If the current exchange rate is within this fractional distance from the target, no supply
-        // update is performed. Fixed point number--same format as the rate.
-        // (ie) abs(rate - targetRate) / targetRate < deviationThreshold, then no supply change.
-        // DECIMALS Fixed point number.
+         uint256 private baseCpi;
+      /*
+         *If the current exchange rate is within this fractional distance from the target, no supply
+         *update is performed. Fixed point number--same format as the rate.
+         *(ie) abs(rate - targetRate) / targetRate < deviationThreshold, then no supply change.
+         *DECIMALS Fixed point number.
+        */
         uint256 public deviationThreshold;
 
-        // The rebase lag parameter, used to dampen the applied supply adjustment by 1 / rebaseLag
+        /* 
+         * The rebase lag parameter, used to dampen the applied supply adjustment by 1 / rebaseLag
+         *  according to rebase result,if rebase is positive 5 percent of supply is send to holder 
+            for that we are initializing rebase lag parameter as 50 
+
+        */
+
         uint256 public rebaseLag;
         uint256 public supplyAfterRebase;
         uint256 public exchangeRate;
+/*
 
-        // Minimum time taken for rebase operation.
+ * minRebaseTimeIntervalmin parameter used to initialize Minimum time taken for rebase operation
+ * lastRebaseTimestampmin parameter used to initialize Block timestamp of last rebase operation
+ * rebaseWindowOffsetmin parameter used to initialize  minRebaseTimeInterval period,
+   For example if minRebaseTimeInterval is 24hrs, it represents the time of day in minutes.
+ * rebaseWindowLengthhours parameter used to initialize length of the time window where a rebase operation is allowed to execute, in hours.
+*/
          uint256 public minRebaseTimeIntervalmin;
-        
-        // Block timestamp of last rebase operation
-        uint256 public lastRebaseTimestampmin;
+         uint256 public lastRebaseTimestampmin;
+         uint256 public rebaseWindowOffsetmin;
+         uint256 public rebaseWindowLengthhours;
 
-        // The rebase window begins this many minutes into the minRebaseTimeInterval period.
-        // For example if minRebaseTimeInterval is 24hrs, it represents the time of day in minutes.
-        uint256 public rebaseWindowOffsetmin;
-
-        // The length of the time window where a rebase operation is allowed to execute, in hours.
-        uint256 public rebaseWindowLengthhours;
-
-        // The number of rebase cycles since inception
+        /* epoch parameter emmits The number of rebase cycles since inception,
+           initially it  is zero,once rebase starts ,it stores how many rebase are occured.
+        */
         uint256 public epoch;
         uint256 private constant DECIMALS = 18;
        
 
-        // Due to the expression in computeSupplyDelta(), MAX_RATE * MAX_SUPPLY must fit into an int256.
-        // Both are 18 decimals fixed point numbers.
+        /* Due to the expression in computeSupplyDelta(), MAX_RATE * MAX_SUPPLY must fit into an int256.
+        *  Both are 18 decimals fixed point numbers.
+        *  MAX_SUPPLY = MAX_INT256 / MAX_RATE */
         uint256 private constant MAX_RATE = 10**6 * 10**DECIMALS;
-        // MAX_SUPPLY = MAX_INT256 / MAX_RATE
         uint256 public constant MAX_SUPPLY = ~(uint256(1) << 255) / MAX_RATE;
 
-        // eBNBOrchestrator Authentication
+        /* eBNBOrchestratorref is reference parameter
+        *   eBNBOrchestratorref is used to authenticate eBNBorchestrator
+        */
         address public eBNBorchestratorref;
-
         modifier onlyeBNBOrchestrator() {
             require(msg.sender == eBNBorchestratorref);
             _;
         }
 
         /*
-          @prabhakaran1998 
+         
            This method Initialize eBNBMoney address(eBNBmoney = eBNBmoney_),
            It will Initialize the Owner address(OwnableUpgradeSafe.__Ownable_init()),
            It initialize Band protocol ref address(ref = _ref), 
@@ -106,7 +118,11 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             ref = _ref;
            
         }
-       
+       /* 
+        * function getPrice() can provide current price of BNB/USD,
+        *  and it connected with IStdReference interface
+        * it getprice from Bandprotocol Oracle
+       */
         function getPrice() external payable  returns (uint256){
         IStdReference.ReferenceData memory data = ref.getReferenceData("BNB","USD");
         price =data.rate;
@@ -123,17 +139,18 @@ contract eBNBPolicy is OwnableUpgradeSafe{
      
         function rebase() external  onlyeBNBOrchestrator  {
             require(inRebaseWindow());
+            require(lastRebaseTimestampmin.add(minRebaseTimeIntervalmin) < block.timestamp);
 
-            // This comparison also ensures there is no reentrancy.
-           require(lastRebaseTimestampmin.add(minRebaseTimeIntervalmin) < block.timestamp);
-
-            // Snap the rebase time to the start of this window.
+            /*
+              * 
+              * Snap the rebase time to the start of this window.
+              * and make epoch value as per number of rebase occcurs
+              * initially epoch is zero and it increments when rebase oocurs
+             */
             lastRebaseTimestampmin = block.timestamp.sub( block.timestamp.mod(minRebaseTimeIntervalmin)).add(rebaseWindowOffsetmin);
             epoch = epoch.add(1);
-
-            uint256 cpi = 1;
+             uint256 cpi = 1;
             bool cpiValid = true;
-           
             require(cpiValid);
             uint256 targetRate = cpi.mul(10 ** DECIMALS);
             bool rateValid = true;
@@ -144,10 +161,13 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             if (exchangeRate > MAX_RATE) {
                 exchangeRate = MAX_RATE;
             }
+             /*
 
+             * This Conditions  are to check  supplydelta
+             * It checks  supplydelta is supplyDelta > 0 && eBNBmoney.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY)
+              
+              */
             int256 supplyDelta = computeSupplyDelta(exchangeRate, targetRate);
-           
-            // Apply the Dampening factor.
             supplyDelta = supplyDelta.div(rebaseLag.toInt256Safe());
 
             if (supplyDelta > 0 && eBNBmoney.totalSupply().add(uint256(supplyDelta)) > MAX_SUPPLY) {
@@ -173,9 +193,10 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         }
 
         /**
-        * @notice Sets the deviation threshold fraction. If the exchange rate given by the market
-        *         oracle is within this fractional distance from the targetRate, then no supply
-        *         modifications are made. DECIMALS fixed point number.
+        * @notice Sets the deviation threshold fraction. 
+        *      If the exchange rate given by the
+        *       market oracle  of Band protocol and chainlink protocol is within this fractional distance from the targetRate, then no supply
+        *      modifications are made. DECIMALS fixed point number.
         * @param deviationThreshold_ The new exchange rate threshold fraction.
         */
         function setDeviationThreshold(uint256 deviationThreshold_)
@@ -222,7 +243,6 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         {
             require(minRebaseTimeIntervalSec_ > 0);
             require(rebaseWindowOffsetSec_ < minRebaseTimeIntervalSec_);
-
             minRebaseTimeIntervalmin = minRebaseTimeIntervalSec_;
             rebaseWindowOffsetmin = rebaseWindowOffsetSec_;
             rebaseWindowLengthhours = rebaseWindowLengthSec_;
@@ -264,7 +284,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         *  current exchange rate is  an 18 decimal fixed point number.
         *  The target exchange rate is an 18 decimal fixed point number.
         *  If the rate is within the deviation threshold from the target rate, returns true.
-        *         Otherwise, returns false.
+        *  Otherwise, returns false.
         */
        function withinDeviationThreshold(uint256 rate, uint256 targetRate)
             private
