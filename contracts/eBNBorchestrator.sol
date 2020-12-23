@@ -1,4 +1,9 @@
 
+/*created by:Prabhakaran(@Prabhakaran1998)
+             Martina(@Martinagracy28)    
+Role:solidity Developer-boson labs
+date:28-Nov-2020
+reviewed by:hemadri -project director-Boson Labs */
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.24;
 import "./eBNBpolicy.sol";
@@ -9,24 +14,21 @@ import "./eBNBpolicy.sol";
  * actions with external consumers.
  */
 contract eBNBOrchestrator is OwnableUpgradeSafe {
-
-    struct Transaction {
+struct Transaction {
         bool enabled;
         address destination;
         bytes data;
     }
 
     event TransactionFailed(address indexed destination, uint index, bytes data);
-
-    // Stable ordering is not guaranteed.
     Transaction[] public transactions;
-
     eBNBPolicy public eBNBpolicyref;
 
     /**
+       Here we Initializing address of
      * @param eBNBpolicyref_ Address of the  eBNBpolicy.
      */
-    function initialize(address eBNBpolicyref_) public {
+     function initialize(address eBNBpolicyref_) public {
         OwnableUpgradeSafe.__Ownable_init();
         eBNBpolicyref = eBNBPolicy(eBNBpolicyref_);
     }
