@@ -1,3 +1,8 @@
+/*created by:Prabhakaran(@Prabhakaran1998)
+Role:solidity Developer-boson labs
+date:28-Nov-2020
+reviewed by:hemadri -project director-Boson Labs */
+
 pragma solidity >=0.6.8;
 pragma experimental ABIEncoderV2;
 // SPDX-License-Identifier: MIT
@@ -74,14 +79,24 @@ contract eBNBPolicy is OwnableUpgradeSafe{
             _;
         }
 
-         //Initialize eBNBpolicy
+        /*
+          @prabhakaran1998 
+           This method Initialize eBNBMoney address(eBNBmoney = eBNBmoney_),
+           It will Initialize the Owner address(OwnableUpgradeSafe.__Ownable_init()),
+           It initialize Band protocol ref address(ref = _ref), 
+           It initialize  rebase  time Interval = 1 day,
+           It Initialize  rebaseWindowLengthhours = 4 hours;
+           It Initialize  rebaseWindowOffsetmin = 60 minutes;  
+           It Initialize   deviationThreshold = 5 * 10 ** (DECIMALS-2);;  
+           It initialize  rebaseLag = 50;
+        */
        function initialize(eBNB eBNBmoney_,IStdReference _ref)
             public
             initializer
         {
             OwnableUpgradeSafe.__Ownable_init();
-           deviationThreshold = 5 * 10 ** (DECIMALS-2);
-           rebaseLag = 50;
+            deviationThreshold = 5 * 10 ** (DECIMALS-2);
+            rebaseLag = 50;
             minRebaseTimeIntervalmin = 1 days;
             rebaseWindowOffsetmin = 60 minutes;  
             rebaseWindowLengthhours = 4 hours;
