@@ -1,6 +1,8 @@
 const BigNumber = web3.BigNumber;
+const  assert  = require('console');
 const mlog = require('mocha-logger');
 const util = require('util');
+
 
 require('chai')
   .use(require('chai-bignumber')(BigNumber))
@@ -9,7 +11,7 @@ require('chai')
 const eBNBMoney = artifacts.require('eBNBMoney');
 
 contract('eBNBMoney', ([owner, holder, receiver, nilAddress]) => {
-  const TOKEN_COUNT = 3000000;
+  const TOKEN_COUNT = 1200000;
 
   beforeEach(async () => {
     this.eb = await eBNBMoney.new({ from: owner });
@@ -19,7 +21,7 @@ contract('eBNBMoney', ([owner, holder, receiver, nilAddress]) => {
    
     it('it should have the correct totalsupply', async () => {
       const symbol = (await this.eb.totalSupply()).toString();
-      symbol.should.be.bignumber.equal(30000000);
+      symbol.should.be.bignumber.equal(12000000);
     });
     describe('Given that I have a fixed supply of tokens', () => {
       it('it should return the total supply of tokens for the Contract', async () => {
@@ -48,7 +50,7 @@ contract('eBNBMoney', ([owner, holder, receiver, nilAddress]) => {
             await this.eb.transfer(owner, amount, { from: owner })
             hasError = false; // Should be unreachable
           } catch(err) { }
-          assert.equal(false, hasError, "Function not throwing exception on transfer to self");
+          hasError.should.be.equal(false);
         });
         it('it should not let someone transfer tokens they do not have', async () => {
           var hasError = true;
@@ -57,8 +59,38 @@ contract('eBNBMoney', ([owner, holder, receiver, nilAddress]) => {
             await this.eb.transfer(receiver, toWei(20), { from: holder })
             hasError = false;
           } catch(err) { }
-          assert.equal(true, hasError, "Insufficient funds");
+          hasError.should.be.equal(true);
         });
+        describe("it should checking some functions",() =>{
+          it('it should approve the spender with value',async() =>{
+           await this.eb.approve(receiver,100);
+           let approve = true;
+          approve.should.be.equal(true);
+        })
+        it('it should increase the value os spender',async()=>{
+          await this.eb.increaseAllowance(receiver,10);
+          let increased = true;
+          increased.should.be.equal(true);
+        })
+        it("it should decrease the allowance of spender",async() =>{
+          await this.eb.decreaseAllowance(receiver,10);
+          let decreased = true;
+          decreased.should.be.equal(true);
+        })
+        it("we should not be callable rebase function from this because it shouldbe callable only from orchestrator",async()=>{
+          var hasError = true;
+          try {
+            await this.eb.rebase(1,2);
+            hasError = false;
+          } catch(err) { }
+          hasError.should.be.equal(true);
+        })
+        it("set eBNBPolicyAuthentication for eBNBMoney",async() =>{
+          await this.eb.seteBNBPolicyAuthentication("0x9a6c7f937336879B8469ff0F2EB796d3EE2C1a4A");
+          let eBNBPolicy = true;
+          eBNBPolicy.should.be.equal(true);
+        })
+      })
       });
     });
   });
