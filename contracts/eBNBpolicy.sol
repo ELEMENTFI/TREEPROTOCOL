@@ -49,7 +49,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         /* 
          * The rebase lag parameter, used to dampen the applied supply adjustment by 1 / rebaseLag
          *  according to rebase result,if rebase is positive 5 percent of supply is send to holder 
-            for that we are initializing rebase lag parameter as 50 
+            for that we are initializing rebase lag parameter as 20 
 
         */
 
@@ -100,7 +100,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
            It Initialize  rebaseWindowLengthhours = 4 hours;
            It Initialize  rebaseWindowOffsetmin = 60 minutes;  
            It Initialize   deviationThreshold = 5 * 10 ** (DECIMALS-2);;  
-           It initialize  rebaseLag = 50;
+           It initialize  rebaseLag = 20;
         */
        function initialize(eBNB eBNBmoney_,IStdReference _ref)
             public
