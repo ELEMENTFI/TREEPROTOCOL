@@ -1,3 +1,7 @@
+/*created by:Martina Gracy(@Martinagracy28)
+Role:solidity Developer-boson labs
+date:28-Nov-2020
+reviewed by:hemadri -project director-Boson Labs */
 pragma solidity >=0.6.8;
 // SPDX-License-Identifier: MIT
 import "./ownership/Ownable.sol";
@@ -11,14 +15,19 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
 
    
     address public eBNBPolicyAuthentication;
-
-    // events emitted during function calls
+    /*
+     events emitted during function calls
+    LogRebase,LogRebasePaused,LogTokenPaused,LogMonetaryPolicyUpdated 
+   */
     event LogRebase(uint256 indexed epoch, uint256 totalSupply);
     event LogRebasePaused(bool paused);
     event LogTokenPaused(bool paused);
     event LogMonetaryPolicyUpdated(address eBNBPolicyAuthentication);
 
-    // Used for authentication only call from eBNBpolicy
+    /*
+    Used for authentication only call from eBNBpolicy contract.
+    It is udes in rebase function call.
+    */
     modifier onlyeBNBPolicyAuthentication() {
         require(msg.sender == eBNBPolicyAuthentication);
         _;
@@ -50,7 +59,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     uint256 private constant MAX_UINT256 = ~uint256(0);
 
     
-    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 30 * 10**5 * 10**DECIMALS;
+    uint256 private constant INITIAL_FRAGMENTS_SUPPLY = 12 * 10**5 * 10**DECIMALS;
 
     // TOTAL_GONS value is integer value of INITIAL_FRAGMENTS_SUPPLY.
     uint256 private constant TOTAL_GONS = MAX_UINT256 - (MAX_UINT256 % INITIAL_FRAGMENTS_SUPPLY);
@@ -62,16 +71,18 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     mapping(address => uint256) private _gonBalances;
     mapping (address => mapping (address => uint256)) private _allowedFragments;
 
-   //Initialize Token name,Symbol and TotalSupply.
-   /*Token name ="eBNB";
+   /*
+    Initialize Token name,Symbol and TotalSupply.
+    Token name ="eBNB";
      Token Symbol = "eBNB";
-     Total Supply ="30000000";
+     Total Supply ="12000000";
+     It initialize rebasePaused and tokenPaused to false as a default value.
     */
     function initialize()
         public
         initializer
     {
-       BEP20Token.__BEP20_init("eBNB", "eBNB");
+       BEP20Token.__BEP20_init("eBNBdev", "eBNBDEV");
         OwnableUpgradeSafe.__Ownable_init();
         rebasePaused = false;
         tokenPaused = false;
@@ -81,6 +92,9 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
        
         emit Transfer(address(0x0), msg.sender, _totalSupply);
     }
+    /*
+    It will set eBNBPolicy and connect the eBNBMoney to eBNBPolicy contract.
+    */
     function seteBNBPolicyAuthentication(address eBNBPolicyAuthentication_)
         external
         onlyOwner
@@ -88,7 +102,10 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         eBNBPolicyAuthentication = eBNBPolicyAuthentication_;
         emit LogMonetaryPolicyUpdated(eBNBPolicyAuthentication_);
     }
-
+    /*
+    Pauses or Unpauses the rebase operation.
+    If it is true,rebase is Paused. 
+    */
  
      function setRebasePaused(bool paused)
         external
@@ -139,6 +156,10 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         emit LogRebase(epoch, _totalSupply);
         return _totalSupply;
     }
+    /*
+    It is initialized when calling initialize function.
+    It will return the totalsupply of our token.
+    */
   function totalSupply()
         public override
         view
@@ -266,10 +287,5 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         return true;
     }
 
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "BEP20: mint to the zero address");
-        _totalSupply = _totalSupply.add(amount);
-        _gonBalances[account] = _gonBalances[account].add(amount);
-        emit Transfer(address(0), account, amount);
-    }
+    
 }
