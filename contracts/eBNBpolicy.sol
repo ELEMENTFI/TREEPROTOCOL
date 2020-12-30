@@ -98,7 +98,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
            It initialize Band protocol ref address(ref = _ref), 
            It initialize  rebase  time Interval = 1 day,
            It Initialize  rebaseWindowLengthhours = 4 hours;
-           It Initialize  rebaseWindowOffsetmin = 60 minutes;  
+           It Initialize  rebaseWindowOffsetmin = 18 hours;  
            It Initialize   deviationThreshold = 5 * 10 ** (DECIMALS-2);;  
            It initialize  rebaseLag = 20;
         */
@@ -108,9 +108,9 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         {
             OwnableUpgradeSafe.__Ownable_init();
             deviationThreshold = 5 * 10 ** (DECIMALS-2);
-            rebaseLag = 20;
+            rebaseLag = 10;
             minRebaseTimeIntervalmin = 1 days;
-            rebaseWindowOffsetmin = 60 minutes;  
+            rebaseWindowOffsetmin = 18 hours;  
             rebaseWindowLengthhours = 4 hours;
             lastRebaseTimestampmin = 0;
             epoch = 0;
@@ -174,6 +174,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
                 supplyDelta = (MAX_SUPPLY.sub(eBNBmoney.totalSupply())).toInt256Safe();
             }
 
+            
             supplyAfterRebase = eBNBmoney.rebase(epoch, supplyDelta);
             assert(supplyAfterRebase <= MAX_SUPPLY);
             emit LogRebase(epoch, exchangeRate, targetRate, supplyDelta, block.timestamp);
@@ -273,11 +274,20 @@ contract eBNBPolicy is OwnableUpgradeSafe{
                 return 0;
             }
 
+           
             // supplyDelta = totalSupply * (rate - targetRate) / targetRate
             int256 targetRateSigned = targetRate.toInt256Safe();
+            int256 added = targetRateSigned.add(10 ** 18);
+            if(rate.sub(targetRate) == 1){
             return  eBNBmoney.totalSupply().toInt256Safe()
                 .mul(rate.toInt256Safe().sub(targetRateSigned))
                 .div(targetRateSigned);
+            }
+            else{
+                return  eBNBmoney.totalSupply().toInt256Safe()
+                .mul(added.sub(targetRateSigned))
+                .div(targetRateSigned);
+            }
         }
 
         /**
