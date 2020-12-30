@@ -25,7 +25,7 @@ contract seed is BEP20Token,OwnableUpgradeSafe{
     uint256 public _gonsPerFragment;
     mapping(address => uint256) private _gonBalances;
     mapping (address => mapping (address => uint256)) private _allowedFragments;
-    address[] public players;
+    address[] public tokenreceiver;
     eBNB public ebnb;
     modifier validRecipient(address to) {
         require(to != address(0x0));
@@ -59,13 +59,16 @@ contract seed is BEP20Token,OwnableUpgradeSafe{
         return _totalSupply;
     }
      
-    function interact(uint256 _value) public  returns(bool){
-      players =  ebnb. gettokenreceiver();
-      uint256 valu= _value;
+    function interact() public  returns(bool){
+      tokenreceiver =  ebnb. gettokenreceiver();
+    
       uint256 count = ebnb. gettokenreceivercount();
       for(uint256 i =0;i<count;i++)
       {
-          transfer(players[i],valu);
+          uint256 bal = ebnb.balanceOf(tokenreceiver[i]);
+          uint256 balper = bal.div(10);
+          uint256 value = balper.div(100);
+          transfer(tokenreceiver[i],value);
       }
       return true;
     }

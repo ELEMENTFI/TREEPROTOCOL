@@ -274,20 +274,26 @@ contract eBNBPolicy is OwnableUpgradeSafe{
                 return 0;
             }
 
-           
             // supplyDelta = totalSupply * (rate - targetRate) / targetRate
             int256 targetRateSigned = targetRate.toInt256Safe();
             int256 added = targetRateSigned.add(10 ** 18);
-            if(rate.sub(targetRate) == 1){
+            if(rate.toInt256Safe().sub(targetRate.toInt256Safe()) == (10**18)){
             return  eBNBmoney.totalSupply().toInt256Safe()
                 .mul(rate.toInt256Safe().sub(targetRateSigned))
                 .div(targetRateSigned);
             }
-            else{
+            else if(rate > targetRate)
+            {
                 return  eBNBmoney.totalSupply().toInt256Safe()
                 .mul(added.sub(targetRateSigned))
                 .div(targetRateSigned);
             }
+            else{
+                return  eBNBmoney.totalSupply().toInt256Safe()
+                .mul(rate.toInt256Safe().sub(targetRateSigned))
+                .div(targetRateSigned);
+            }
+            
         }
 
         /**
