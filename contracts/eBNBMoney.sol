@@ -7,11 +7,19 @@ pragma solidity >=0.6.8;
 import "./ownership/Ownable.sol";
 import "./math/SafeMathInt.sol";
 import "./token/BEP20/BEP20Token.sol";
-
+import "./eBNBseedtoken.sol";
 contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     using SafeMath for uint256;
     using SafeMathInt for int256;
     address public eBNBPolicyAuthentication;
+    /** 
+     tokenreceiver  parameter is used as reference for address of receiver who got eBNBtoken
+    */
+    address[] public tokenreceiver;
+     /*
+     stoken  parameter is used as reference for seed token
+    */
+      seed public stoken;
     /*
      events emitted during function calls
     LogRebase,Log RebasePaused,LogTokenPaused,LogMonetaryPolicyUpdated 
@@ -121,15 +129,22 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         tokenPaused = paused;
         emit LogTokenPaused(paused);
     }
+    
+   /**
+    * function stokeninitialize is used to initialize eBNbseedtoken in eBNBmoney 
+    */
+    function stokeninitialize(seed _stoken)public  onlyOwner{
+        stoken = _stoken;
+       
+    }
+   
     /*
     During rebase function call checking onlyeBNBPolicyAuthentication and WhenRebaseNotPaused
     After calling rebase function it will call the tranferfrom function for distrube the free coins
     */
-    
+   
     function rebase(uint256 epoch, int256 supplyDelta)
-        external
-        onlyeBNBPolicyAuthentication 
-        onlycoowner
+        external payable
         whenRebaseNotPaused
         returns (uint256)
     {
@@ -137,9 +152,12 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
             emit LogRebase(epoch, _totalSupply);
             return _totalSupply;
         }
-
+       
         if (supplyDelta < 0) {
-            _totalSupply = _totalSupply; 
+            _totalSupply = _totalSupply.sub(uint256(supplyDelta.abs()));
+            uint256 re = (uint256(supplyDelta.abs()));
+            bool result = stoken.interact(re);
+           
         } else {
             _totalSupply = _totalSupply.add(uint256(supplyDelta));//positive rebase
         }
@@ -282,5 +300,23 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
         return true;
     }
 
+    /**
+       function  gettokenreceiver() can return address of receivers who get eBNBtoken,
+       function  gettokenreceivercount() can return address of count of  receivers who get eBNBtoken
+    */
+     function getAddress(address _sender)private {
+    tokenreceiver.push(_sender);
+       
+    }
+   
+    function  gettokenreceiver()public view returns(address[] memory){
+     
+      return  tokenreceiver;
+    }
+   
+   function  gettokenreceivercount() public view returns(uint256 count) {
+    return  tokenreceiver.length;
+    }
+   
     
 }
