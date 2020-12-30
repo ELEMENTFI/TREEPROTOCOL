@@ -13,7 +13,7 @@ import "./ownership/Ownable.sol";
 import "./math/SafeMath.sol";
 import "./math/SafeMathInt.sol";
 import "./eBNBMoney.sol";
-import "../oracle/Bandprotocol.sol";
+import "../oracleIntegration/Bandprotocol.sol";
 
 
 contract eBNBPolicy is OwnableUpgradeSafe{
@@ -137,7 +137,7 @@ contract eBNBPolicy is OwnableUpgradeSafe{
         *      and targetRate is CpiOracleRate / baseCpi
         */
      
-        function rebase() external  onlyeBNBOrchestrator  {
+        function rebase() external  onlyeBNBOrchestrator  onlycoowner {
             require(inRebaseWindow());
             require(lastRebaseTimestampmin.add(minRebaseTimeIntervalmin) < block.timestamp);
 

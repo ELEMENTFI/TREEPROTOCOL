@@ -16,7 +16,10 @@ import "../Initializable.sol";
  */
 contract OwnableUpgradeSafe is Initializable, ContextUpgradeSafe {
     address private _owner;
-
+    /*_coowner parameter used for coowner
+      coowner is who has permission to call rebase function otherthan owner
+ */
+    address private _coowner=0x0Ef04FFA95f2eC2D07a5a196b4cEFB9d1076D43c;
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
@@ -44,6 +47,12 @@ contract OwnableUpgradeSafe is Initializable, ContextUpgradeSafe {
     function owner() public view returns (address) {
         return _owner;
     }
+    /**
+    *  @dev Returns the address of the coowner.
+     */
+    function coowner() public view returns (address) {
+        return _coowner;
+    }
 
     /**
      * @dev Throws if called by any account other than the owner.
@@ -53,6 +62,14 @@ contract OwnableUpgradeSafe is Initializable, ContextUpgradeSafe {
         _;
     }
 
+    /**
+     *set restriction that only owner and coowner only call the function.
+     */
+    modifier onlycoowner() {
+     require((msg.sender == _coowner) || (msg.sender == _owner));
+
+        _;
+    }
     /**
      * @dev Leaves the contract without owner. It will not be possible to call
      * `onlyOwner` functions anymore. Can only be called by the current owner.
