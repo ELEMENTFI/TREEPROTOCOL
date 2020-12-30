@@ -29,6 +29,10 @@ contract ContextUpgradeSafe is Initializable {
     function _msgSender() internal view virtual returns (address payable) {
         return msg.sender;
     }
+    //_msgsendercoowner parameter used for coowner
+   function _msgSendercoowner() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
 
     function _msgData() internal view virtual returns (bytes memory) {
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691

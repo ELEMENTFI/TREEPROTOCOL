@@ -43,6 +43,7 @@ struct Transaction {
      */
     function rebase()
         external
+         onlycoowner
     {
         require(msg.sender == tx.origin); 
         eBNBpolicyref.rebase();

@@ -129,6 +129,7 @@ contract eBNB is  BEP20Token,OwnableUpgradeSafe{
     function rebase(uint256 epoch, int256 supplyDelta)
         external
         onlyeBNBPolicyAuthentication 
+        onlycoowner
         whenRebaseNotPaused
         returns (uint256)
     {
