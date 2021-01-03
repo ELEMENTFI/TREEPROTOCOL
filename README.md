@@ -1,4 +1,4 @@
-# MoneyProtocol
+# TreeProtocol
 
 eBNB (code name MoneyProtocol) First autonomous price reactive Defi Commodity Money on the Binance Smart Chain with all the characteristics of both GOLD and FIAT.
 
