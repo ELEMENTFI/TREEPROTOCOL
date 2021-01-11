@@ -7,7 +7,7 @@ reviewed by:hemadri -project director-Boson Labs */
 // SPDX-License-Identifier: MIT
 
 /*
-MIT License
+
 
 Copyright (c) 2020 eBNB MoneyProtocol
 
