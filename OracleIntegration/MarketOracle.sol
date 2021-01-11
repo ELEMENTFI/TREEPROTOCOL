@@ -1,7 +1,9 @@
-/**
- *Submitted for verification at BscScan.com on 2020-12-23
-*/
 
+/*created by:Prabhakaran(@Prabhakaran1998)
+             Martina(@Martinagracy28)    
+Role:solidity Developer-boson labs
+date:11-Jan-2021
+reviewed by:hemadri -project director-Boson Labs */
 // SPDX-License-Identifier: MIT
 
 /*
