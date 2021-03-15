@@ -4,7 +4,7 @@ eBNB (code name MoneyProtocol) First autonomous price reactive Defi Commodity Mo
 
 This repository is a set of contracts in the Binance smartchain.
 
-# The official devnet addresses are:
+# The official devnet addresses are :
 
  BEP-20 Token: [0x9F87799FC95eE8A9c5C858f5b65ca7B6599BA040](https://testnet.bscscan.com/address/0x9F87799FC95eE8A9c5C858f5b65ca7B6599BA040#code).
  
