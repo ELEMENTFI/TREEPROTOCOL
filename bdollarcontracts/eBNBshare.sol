@@ -876,7 +876,7 @@ contract Operator is Context, Ownable {
     }
 }
 
-contract Share is ERC20Burnable, Operator {
+contract eBNBShare is ERC20Burnable, Operator {
     using SafeMath for uint256;
 
     // TOTAL MAX SUPPLY = 100,000 sBDO
