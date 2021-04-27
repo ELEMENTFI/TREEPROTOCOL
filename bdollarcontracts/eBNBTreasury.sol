@@ -33,9 +33,9 @@ library Math {
 }
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP.
+ * @dev Interface of the BEP20 standard as defined in the EIP.
  */
-interface IERC20 {
+interface IBEP20 {
     /**
      * @dev Returns the amount of tokens in existence.
      */
@@ -437,20 +437,20 @@ library Address {
 }
 
 /**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * @title SafeBEP20
+ * @dev Wrappers around BEP20 operations that throw on failure (when the token
  * contract returns false). Tokens that return no value (and instead revert or
  * throw on failure) are also supported, non-reverting calls are assumed to be
  * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * To use this library you can add a `using SafeBEP20 for IBEP20;` statement to your contract,
  * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
  */
-library SafeERC20 {
+library SafeBEP20 {
     using SafeMath for uint256;
     using Address for address;
 
     function safeTransfer(
-        IERC20 token,
+        IBEP20 token,
         address to,
         uint256 value
     ) internal {
@@ -458,7 +458,7 @@ library SafeERC20 {
     }
 
     function safeTransferFrom(
-        IERC20 token,
+        IBEP20 token,
         address from,
         address to,
         uint256 value
@@ -468,13 +468,13 @@ library SafeERC20 {
 
     /**
      * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
+     * {IBEP20-approve}, and its usage is discouraged.
      *
      * Whenever possible, use {safeIncreaseAllowance} and
      * {safeDecreaseAllowance} instead.
      */
     function safeApprove(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
@@ -482,12 +482,12 @@ library SafeERC20 {
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
+        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeBEP20: approve from non-zero to non-zero allowance");
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
     }
 
     function safeIncreaseAllowance(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
@@ -496,11 +496,11 @@ library SafeERC20 {
     }
 
     function safeDecreaseAllowance(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeBEP20: decreased allowance below zero");
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
@@ -510,16 +510,16 @@ library SafeERC20 {
      * @param token The token targeted by the call.
      * @param data The call data (encoded using abi.encode or one of its variants).
      */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+    function _callOptionalReturn(IBEP20 token, bytes memory data) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        bytes memory returndata = address(token).functionCall(data, "SafeBEP20: low-level call failed");
         if (returndata.length > 0) {
             // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(abi.decode(returndata, (bool)), "SafeBEP20: BEP20 operation did not succeed");
         }
     }
 }
@@ -808,7 +808,7 @@ interface IBoardroom {
  * @author Summer Smith & Rick Sanchez
  */
 contract Treasury is ContractGuard {
-    using SafeERC20 for IERC20;
+    using SafeBEP20 for IBEP20;
     using Address for address;
     using SafeMath for uint256;
 
@@ -929,7 +929,7 @@ contract Treasury is ContractGuard {
         _;
 
         epoch = epoch.add(1);
-        epochSupplyContractionLeft = (getDollarPrice() > dollarPriceCeiling) ? 0 : IERC20(dollar).totalSupply().mul(maxSupplyContractionPercent).div(10000);
+        epochSupplyContractionLeft = (getDollarPrice() > dollarPriceCeiling) ? 0 : IBEP20(dollar).totalSupply().mul(maxSupplyContractionPercent).div(10000);
     }
 
     modifier checkOperator {
@@ -1022,9 +1022,9 @@ function getDollarPrice() public view returns (uint256 ) {
     function getBurnableDollarLeft() public view returns (uint256 _burnableDollarLeft) {
         uint256 _dollarPrice = getDollarPrice();
         if (_dollarPrice <= dollarPriceOne) {
-            uint256 _dollarSupply = IERC20(dollar).totalSupply();
+            uint256 _dollarSupply = IBEP20(dollar).totalSupply();
             uint256 _bondMaxSupply = _dollarSupply.mul(maxDeptRatioPercent).div(10000);
-            uint256 _bondSupply = IERC20(bond).totalSupply();
+            uint256 _bondSupply = IBEP20(bond).totalSupply();
             if (_bondMaxSupply > _bondSupply) {
                 uint256 _maxMintableBond = _bondMaxSupply.sub(_bondSupply);
                 uint256 _maxBurnableDollar = _maxMintableBond.mul(_dollarPrice).div(1e18);
@@ -1036,7 +1036,7 @@ function getDollarPrice() public view returns (uint256 ) {
     function getRedeemableBonds() public view returns (uint256 _redeemableBonds) {
         uint256 _dollarPrice = getDollarPrice();
         if (_dollarPrice > dollarPriceCeiling) {
-            uint256 _totalDollar = IERC20(dollar).balanceOf(address(this));
+            uint256 _totalDollar = IBEP20(dollar).balanceOf(address(this));
             uint256 _rewardAmount = externalRewardAmount.add(incentiveByBondPurchaseAmount);
             if (_totalDollar > _rewardAmount) {
                 uint256 _rate = getBondPremiumRate();
@@ -1095,7 +1095,7 @@ function getDollarPrice() public view returns (uint256 ) {
     }
 
     function getBoardroomContractionReward() external view returns (uint256) {
-        uint256 _dollarBal = IERC20(dollar).balanceOf(address(this));
+        uint256 _dollarBal = IBEP20(dollar).balanceOf(address(this));
         uint256 _externalRewardAmount = (externalRewardAmount > _dollarBal) ? _dollarBal : externalRewardAmount;
         return _externalRewardAmount.mul(externalRewardSharedPercent).div(10000).add(incentiveByBondPurchaseAmount); // BDOIP05
     }
@@ -1105,7 +1105,7 @@ function getDollarPrice() public view returns (uint256 ) {
     }
 
     function getCirculatingSupply(address _token) public view returns (uint256) {
-        return IERC20(_token).totalSupply().sub(IERC20(_token).balanceOf(pegTokenFarmingPool[_token]));
+        return IBEP20(_token).totalSupply().sub(IBEP20(_token).balanceOf(pegTokenFarmingPool[_token]));
     }
 
     function getPegTokenExpansionRate(address _pegToken) public view returns (uint256 _rate) {
@@ -1153,7 +1153,7 @@ function getDollarPrice() public view returns (uint256 ) {
         bdoip01BootstrapSupplyExpansionPercent = 450;
 
         // set seigniorageSaved to it's balance
-        seigniorageSaved = IERC20(dollar).balanceOf(address(this));
+        seigniorageSaved = IBEP20(dollar).balanceOf(address(this));
 
         initialized = true;
         operator = msg.sender;
@@ -1243,7 +1243,7 @@ function getDollarPrice() public view returns (uint256 ) {
     }
 
     function addPegToken(address _token) external onlyOperator {
-        require(IERC20(_token).totalSupply() > 0, "invalid token");
+        require(IBEP20(_token).totalSupply() > 0, "invalid token");
         pegTokens.push(_token);
     }
 
@@ -1268,17 +1268,17 @@ function getDollarPrice() public view returns (uint256 ) {
         // dollar
         Operator(dollar).transferOperator(target);
         Operator(dollar).transferOwnership(target);
-        IERC20(dollar).transfer(target, IERC20(dollar).balanceOf(address(this)));
+        IBEP20(dollar).transfer(target, IBEP20(dollar).balanceOf(address(this)));
 
         // bond
         Operator(bond).transferOperator(target);
         Operator(bond).transferOwnership(target);
-        IERC20(bond).transfer(target, IERC20(bond).balanceOf(address(this)));
+        IBEP20(bond).transfer(target, IBEP20(bond).balanceOf(address(this)));
 
         // share
         Operator(share).transferOperator(target);
         Operator(share).transferOwnership(target);
-        IERC20(share).transfer(target, IERC20(share).balanceOf(address(this)));
+        IBEP20(share).transfer(target, IBEP20(share).balanceOf(address(this)));
 
         migrated = true;
         emit Migration(target);
@@ -1310,10 +1310,10 @@ function getDollarPrice() public view returns (uint256 ) {
         require(_rate > 0, "invalid bond rate");
 
         uint256 _bondAmount = _dollarAmount.mul(_rate).div(1e18);
-        uint256 dollarSupply = IERC20(dollar).totalSupply();
-        uint256 newBondSupply = IERC20(bond).totalSupply().add(_bondAmount);
+        uint256 dollarSupply = IBEP20(dollar).totalSupply();
+        uint256 newBondSupply = IBEP20(bond).totalSupply().add(_bondAmount);
         require(newBondSupply <= dollarSupply.mul(maxDeptRatioPercent).div(10000), "over max debt ratio");
-        IERC20(dollar).safeTransferFrom(msg.sender, address(this), _dollarAmount);
+        IBEP20(dollar).safeTransferFrom(msg.sender, address(this), _dollarAmount);
 
         if (incentiveByBondPurchasePercent > 0) {
             uint256 _incentiveByBondPurchase = _dollarAmount.mul(incentiveByBondPurchasePercent).div(10000);
@@ -1358,14 +1358,14 @@ function getDollarPrice() public view returns (uint256 ) {
             _dollarAmount = _dollarAmount.mul(_bondRedeemTaxRate).div(10000); // BDOIP05
 
             require(
-                IERC20(dollar).balanceOf(address(this)) >= _dollarAmount.add(externalRewardAmount).add(incentiveByBondPurchaseAmount),
+                IBEP20(dollar).balanceOf(address(this)) >= _dollarAmount.add(externalRewardAmount).add(incentiveByBondPurchaseAmount),
                 "has no more budget"
             );
             seigniorageSaved = seigniorageSaved.sub(Math.min(seigniorageSaved, _dollarAmount));
         }
 
         IBasisAsset(bond).burnFrom(msg.sender, _bondAmount);
-        IERC20(dollar).safeTransfer(msg.sender, _dollarAmount);
+        IBEP20(dollar).safeTransfer(msg.sender, _dollarAmount);
 
         _updateDollarPrice();
 
@@ -1376,24 +1376,24 @@ function getDollarPrice() public view returns (uint256 ) {
         IBasisAsset(dollar).mint(address(this), _amount);
         if (daoFundSharedPercent > 0) {
             uint256 _daoFundSharedAmount = _amount.mul(daoFundSharedPercent).div(10000);
-            IERC20(dollar).transfer(daoFund, _daoFundSharedAmount);
+            IBEP20(dollar).transfer(daoFund, _daoFundSharedAmount);
             emit DaoFundFunded(now, _daoFundSharedAmount);
             _amount = _amount.sub(_daoFundSharedAmount);
         }
         if (bVaultsFundSharedPercent > 0) {
             uint256 _bVaultsFundSharedAmount = _amount.mul(bVaultsFundSharedPercent).div(10000);
-            IERC20(dollar).transfer(bVaultsFund, _bVaultsFundSharedAmount);
+            IBEP20(dollar).transfer(bVaultsFund, _bVaultsFundSharedAmount);
             emit BVaultsFundFunded(now, _bVaultsFundSharedAmount);
             _amount = _amount.sub(_bVaultsFundSharedAmount);
         }
         if (marketingFundSharedPercent > 0) {
             uint256 _marketingSharedAmount = _amount.mul(marketingFundSharedPercent).div(10000);
-            IERC20(dollar).transfer(marketingFund, _marketingSharedAmount);
+            IBEP20(dollar).transfer(marketingFund, _marketingSharedAmount);
             emit MarketingFundFunded(now, _marketingSharedAmount);
             _amount = _amount.sub(_marketingSharedAmount);
         }
-        IERC20(dollar).safeApprove(boardroom, 0);
-        IERC20(dollar).safeApprove(boardroom, _amount);
+        IBEP20(dollar).safeApprove(boardroom, 0);
+        IBEP20(dollar).safeApprove(boardroom, _amount);
         IBoardroom(boardroom).allocateSeigniorage(_amount);
         emit BoardroomFunded(now, _amount);
     }
@@ -1401,14 +1401,14 @@ function getDollarPrice() public view returns (uint256 ) {
     function allocateSeigniorage() external onlyOneBlock checkCondition checkEpoch checkOperator {
         _updateDollarPrice();
         previousEpochDollarPrice = getDollarPrice();
-        uint256 dollarSupply = IERC20(dollar).totalSupply().sub(seigniorageSaved);
+        uint256 dollarSupply = IBEP20(dollar).totalSupply().sub(seigniorageSaved);
         if (epoch < bdoip01BootstrapEpochs) {
             // BDOIP01: 28 first epochs with 4.5% expansion
             _sendToBoardRoom(dollarSupply.mul(bdoip01BootstrapSupplyExpansionPercent).div(10000));
         } else {
             if (previousEpochDollarPrice > dollarPriceCeiling) {
                 // Expansion ($BDO Price > 1$): there is some seigniorage to be allocated
-                uint256 bondSupply = IERC20(bond).totalSupply();
+                uint256 bondSupply = IBEP20(bond).totalSupply();
                 uint256 _percentage = previousEpochDollarPrice.sub(dollarPriceOne);
                 uint256 _savedForBond;
                 uint256 _savedForBoardRoom;
@@ -1443,7 +1443,7 @@ function getDollarPrice() public view returns (uint256 ) {
             } else {
                 // Contraction ($BDO Price <= 1$): there is some external reward to be allocated
                 uint256 _externalRewardAmount = externalRewardAmount;
-                uint256 _dollarBal = IERC20(dollar).balanceOf(address(this));
+                uint256 _dollarBal = IBEP20(dollar).balanceOf(address(this));
                 if (_externalRewardAmount > _dollarBal) {
                     externalRewardAmount = _dollarBal;
                     _externalRewardAmount = _dollarBal;
@@ -1457,8 +1457,8 @@ function getDollarPrice() public view returns (uint256 ) {
                             _rewardForBoardRoom = _dollarBal;
                         }
                         incentiveByBondPurchaseAmount = 0; // BDOIP05
-                        IERC20(dollar).safeApprove(boardroom, 0);
-                        IERC20(dollar).safeApprove(boardroom, _rewardForBoardRoom);
+                        IBEP20(dollar).safeApprove(boardroom, 0);
+                        IBEP20(dollar).safeApprove(boardroom, _rewardForBoardRoom);
                         externalRewardAmount = _externalRewardAmount.sub(_rewardFromExternal);
                         IBoardroom(boardroom).allocateSeigniorage(_rewardForBoardRoom);
                         emit BoardroomFunded(now, _rewardForBoardRoom);
@@ -1502,15 +1502,15 @@ function getDollarPrice() public view returns (uint256 ) {
                 IBasisAsset(_pegToken).mint(address(this), _amount);
 
                 uint256 _daoFundSharedAmount = _amount.mul(5750).div(10000);
-                IERC20(_pegToken).transfer(daoFund, _daoFundSharedAmount);
+                IBEP20(_pegToken).transfer(daoFund, _daoFundSharedAmount);
                 emit PegTokenDaoFundFunded(_pegToken, now, _daoFundSharedAmount);
 
                 uint256 _marketingFundSharedAmount = _amount.mul(500).div(10000);
-                IERC20(_pegToken).transfer(marketingFund, _marketingFundSharedAmount);
+                IBEP20(_pegToken).transfer(marketingFund, _marketingFundSharedAmount);
                 emit PegTokenMarketingFundFunded(_pegToken, now, _marketingFundSharedAmount);
 
                 _amount = _amount.sub(_daoFundSharedAmount.add(_marketingFundSharedAmount));
-                IERC20(_pegToken).safeIncreaseAllowance(boardroom, _amount);
+                IBEP20(_pegToken).safeIncreaseAllowance(boardroom, _amount);
                 IBoardroom(boardroom).allocateSeignioragePegToken(_pegToken, _amount);
                 emit PegTokenDaoFundFunded(_pegToken, now, _amount);
             }
@@ -1518,13 +1518,13 @@ function getDollarPrice() public view returns (uint256 ) {
     }
 
     function notifyExternalReward(uint256 _amount) external {
-        IERC20(dollar).safeTransferFrom(msg.sender, address(this), _amount);
+        IBEP20(dollar).safeTransferFrom(msg.sender, address(this), _amount);
         externalRewardAmount = externalRewardAmount.add(_amount);
         emit ExternalRewardAdded(now, _amount);
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        IBEP20 _token,
         uint256 _amount,
         address _to
     ) external onlyOperator {
@@ -1555,12 +1555,12 @@ function getDollarPrice() public view returns (uint256 ) {
     }
 
     function boardroomAllocateSeigniorage(uint256 _amount) external onlyOperator {
-        IERC20(dollar).safeIncreaseAllowance(boardroom, _amount);
+        IBEP20(dollar).safeIncreaseAllowance(boardroom, _amount);
         IBoardroom(boardroom).allocateSeigniorage(_amount);
     }
 
     function boardroomAllocateSeignioragePegToken(address _token, uint256 _amount) external onlyOperator {
-        IERC20(_token).safeIncreaseAllowance(boardroom, _amount);
+        IBEP20(_token).safeIncreaseAllowance(boardroom, _amount);
         IBoardroom(boardroom).allocateSeignioragePegToken(_token, _amount);
     }
 }
