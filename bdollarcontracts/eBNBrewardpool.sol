@@ -5,9 +5,9 @@
 pragma solidity 0.6.12;
 
 /**
- * @dev Interface of the ERC20 standard as defined in the EIP.
+ * @dev Interface of the BEP20 standard as defined in the EIP.
  */
-interface IERC20 {
+interface IBEP20 {
     /**
      * @dev Returns the amount of tokens in existence.
      */
@@ -409,20 +409,20 @@ library Address {
 }
 
 /**
- * @title SafeERC20
- * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * @title SafeBEP20
+ * @dev Wrappers around BEP20 operations that throw on failure (when the token
  * contract returns false). Tokens that return no value (and instead revert or
  * throw on failure) are also supported, non-reverting calls are assumed to be
  * successful.
- * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * To use this library you can add a `using SafeBEP20 for IBEP20;` statement to your contract,
  * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
  */
-library SafeERC20 {
+library SafeBEP20 {
     using SafeMath for uint256;
     using Address for address;
 
     function safeTransfer(
-        IERC20 token,
+        IBEP20 token,
         address to,
         uint256 value
     ) internal {
@@ -430,7 +430,7 @@ library SafeERC20 {
     }
 
     function safeTransferFrom(
-        IERC20 token,
+        IBEP20 token,
         address from,
         address to,
         uint256 value
@@ -440,13 +440,13 @@ library SafeERC20 {
 
     /**
      * @dev Deprecated. This function has issues similar to the ones found in
-     * {IERC20-approve}, and its usage is discouraged.
+     * {IBEP20-approve}, and its usage is discouraged.
      *
      * Whenever possible, use {safeIncreaseAllowance} and
      * {safeDecreaseAllowance} instead.
      */
     function safeApprove(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
@@ -454,12 +454,12 @@ library SafeERC20 {
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
+        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeBEP20: approve from non-zero to non-zero allowance");
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
     }
 
     function safeIncreaseAllowance(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
@@ -468,11 +468,11 @@ library SafeERC20 {
     }
 
     function safeDecreaseAllowance(
-        IERC20 token,
+        IBEP20 token,
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeBEP20: decreased allowance below zero");
         _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
@@ -482,16 +482,16 @@ library SafeERC20 {
      * @param token The token targeted by the call.
      * @param data The call data (encoded using abi.encode or one of its variants).
      */
-    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+    function _callOptionalReturn(IBEP20 token, bytes memory data) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        bytes memory returndata = address(token).functionCall(data, "SafeBEP20: low-level call failed");
         if (returndata.length > 0) {
             // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(abi.decode(returndata, (bool)), "SafeBEP20: BEP20 operation did not succeed");
         }
     }
 }
@@ -500,7 +500,7 @@ library SafeERC20 {
 // Instead, the governance will call BDO distributeReward method and send reward to this pool at the beginning.
 contract BdoRewardPool {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeBEP20 for IBEP20;
 
     // governance
     address public operator;
@@ -513,14 +513,14 @@ contract BdoRewardPool {
 
     // Info of each pool.
     struct PoolInfo {
-        IERC20 lpToken; // Address of LP token contract.
+        IBEP20 lpToken; // Address of LP token contract.
         uint256 allocPoint; // How many allocation points assigned to this pool. BDOs to distribute per block.
         uint256 lastRewardBlock; // Last block number that BDOs distribution occurs.
         uint256 accBdoPerShare; // Accumulated BDOs per share, times 1e18. See below.
         bool isStarted; // if lastRewardBlock has passed
     }
 
-    IERC20 public bdo = IERC20(0x8c4CCdD73f79b051Bb5343fCDe5e44C674DB2748);
+    IBEP20 public bdo = IBEP20(0x8c4CCdD73f79b051Bb5343fCDe5e44C674DB2748);
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -551,7 +551,7 @@ contract BdoRewardPool {
 
     constructor(address _bdo, uint256 _startBlock) public {
         require(block.number < _startBlock, "late");
-        if (_bdo != address(0)) bdo = IERC20(_bdo);
+        if (_bdo != address(0)) bdo = IBEP20(_bdo);
         startBlock = _startBlock; // supposed to be 3,410,000 (Fri Dec 25 2020 15:00:00 UTC)
         epochEndBlocks[0] = startBlock + BLOCKS_PER_WEEK;
         uint256 i;
@@ -570,7 +570,7 @@ contract BdoRewardPool {
         _;
     }
 
-    function checkPoolDuplicate(IERC20 _lpToken) internal view {
+    function checkPoolDuplicate(IBEP20 _lpToken) internal view {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
             require(poolInfo[pid].lpToken != _lpToken, "BdoRewardPool: existing pool?");
@@ -580,7 +580,7 @@ contract BdoRewardPool {
     // Add a new lp to the pool. Can only be called by the owner.
     function add(
         uint256 _allocPoint,
-        IERC20 _lpToken,
+        IBEP20 _lpToken,
         bool _withUpdate,
         uint256 _lastRewardBlock
     ) public onlyOperator {
@@ -751,7 +751,7 @@ contract BdoRewardPool {
     }
 
     function governanceRecoverUnsupported(
-        IERC20 _token,
+        IBEP20 _token,
         uint256 amount,
         address to
     ) external onlyOperator {
