@@ -496,9 +496,9 @@ library SafeBEP20 {
     }
 }
 
-// Note that this pool has no minter key of BDO (rewards).
-// Instead, the governance will call BDO distributeReward method and send reward to this pool at the beginning.
-contract BdoRewardPool {
+// Note that this pool has no minter key of eBNB (rewards).
+// Instead, the governance will call eBNB distributeReward method and send reward to this pool at the beginning.
+contract eBNBRewardPool {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
@@ -514,13 +514,13 @@ contract BdoRewardPool {
     // Info of each pool.
     struct PoolInfo {
         IBEP20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. BDOs to distribute per block.
-        uint256 lastRewardBlock; // Last block number that BDOs distribution occurs.
-        uint256 accBdoPerShare; // Accumulated BDOs per share, times 1e18. See below.
+        uint256 allocPoint; // How many allocation points assigned to this pool. eBNBs to distribute per block.
+        uint256 lastRewardBlock; // Last block number that eBNBs distribution occurs.
+        uint256 acceBNBPerShare; // Accumulated eBNBs per share, times 1e18. See below.
         bool isStarted; // if lastRewardBlock has passed
     }
 
-    IBEP20 public bdo = IBEP20(0x8c4CCdD73f79b051Bb5343fCDe5e44C674DB2748);
+    IBEP20 public eBNB = IBEP20(0x8c4CCdD73f79b051Bb5343fCDe5e44C674DB2748);
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -531,7 +531,7 @@ contract BdoRewardPool {
     // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
 
-    // The block number when BDO mining starts.
+    // The block number when eBNB mining starts.
     uint256 public startBlock;
 
     uint256 public constant BLOCKS_PER_WEEK = 201600; // 86400 * 7 / 3;
@@ -542,16 +542,16 @@ contract BdoRewardPool {
     uint256[3] public epochEndBlocks;
 
     // Reward per block for each of 3 epochs (last item is equal to 0 - for sanity).
-    uint256[4] public epochBdoPerBlock;
+    uint256[4] public epocheBNBPerBlock;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event RewardPaid(address indexed user, uint256 amount);
 
-    constructor(address _bdo, uint256 _startBlock) public {
+    constructor(address _eBNB, uint256 _startBlock) public {
         require(block.number < _startBlock, "late");
-        if (_bdo != address(0)) bdo = IBEP20(_bdo);
+        if (_eBNB != address(0)) eBNB = IBEP20(_eBNB);
         startBlock = _startBlock; // supposed to be 3,410,000 (Fri Dec 25 2020 15:00:00 UTC)
         epochEndBlocks[0] = startBlock + BLOCKS_PER_WEEK;
         uint256 i;
@@ -559,21 +559,21 @@ contract BdoRewardPool {
             epochEndBlocks[i] = epochEndBlocks[i - 1] + BLOCKS_PER_WEEK;
         }
         for (i = 0; i <= 2; ++i) {
-            epochBdoPerBlock[i] = epochTotalRewards[i].div(BLOCKS_PER_WEEK);
+            epocheBNBPerBlock[i] = epochTotalRewards[i].div(BLOCKS_PER_WEEK);
         }
-        epochBdoPerBlock[3] = 0;
+        epocheBNBPerBlock[3] = 0;
         operator = msg.sender;
     }
 
     modifier onlyOperator() {
-        require(operator == msg.sender, "BdoRewardPool: caller is not the operator");
+        require(operator == msg.sender, "eBNBRewardPool: caller is not the operator");
         _;
     }
 
     function checkPoolDuplicate(IBEP20 _lpToken) internal view {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
-            require(poolInfo[pid].lpToken != _lpToken, "BdoRewardPool: existing pool?");
+            require(poolInfo[pid].lpToken != _lpToken, "eBNBRewardPool: existing pool?");
         }
     }
 
@@ -604,13 +604,13 @@ contract BdoRewardPool {
             }
         }
         bool _isStarted = (_lastRewardBlock <= startBlock) || (_lastRewardBlock <= block.number);
-        poolInfo.push(PoolInfo({lpToken: _lpToken, allocPoint: _allocPoint, lastRewardBlock: _lastRewardBlock, accBdoPerShare: 0, isStarted: _isStarted}));
+        poolInfo.push(PoolInfo({lpToken: _lpToken, allocPoint: _allocPoint, lastRewardBlock: _lastRewardBlock, acceBNBPerShare: 0, isStarted: _isStarted}));
         if (_isStarted) {
             totalAllocPoint = totalAllocPoint.add(_allocPoint);
         }
     }
 
-    // Update the given pool's BDO allocation point. Can only be called by the owner.
+    // Update the given pool's eBNB allocation point. Can only be called by the owner.
     function set(uint256 _pid, uint256 _allocPoint) public onlyOperator {
         massUpdatePools();
         PoolInfo storage pool = poolInfo[_pid];
@@ -624,31 +624,31 @@ contract BdoRewardPool {
     function getGeneratedReward(uint256 _from, uint256 _to) public view returns (uint256) {
         for (uint8 epochId = 3; epochId >= 1; --epochId) {
             if (_to >= epochEndBlocks[epochId - 1]) {
-                if (_from >= epochEndBlocks[epochId - 1]) return _to.sub(_from).mul(epochBdoPerBlock[epochId]);
-                uint256 _generatedReward = _to.sub(epochEndBlocks[epochId - 1]).mul(epochBdoPerBlock[epochId]);
-                if (epochId == 1) return _generatedReward.add(epochEndBlocks[0].sub(_from).mul(epochBdoPerBlock[0]));
+                if (_from >= epochEndBlocks[epochId - 1]) return _to.sub(_from).mul(epocheBNBPerBlock[epochId]);
+                uint256 _generatedReward = _to.sub(epochEndBlocks[epochId - 1]).mul(epocheBNBPerBlock[epochId]);
+                if (epochId == 1) return _generatedReward.add(epochEndBlocks[0].sub(_from).mul(epocheBNBPerBlock[0]));
                 for (epochId = epochId - 1; epochId >= 1; --epochId) {
-                    if (_from >= epochEndBlocks[epochId - 1]) return _generatedReward.add(epochEndBlocks[epochId].sub(_from).mul(epochBdoPerBlock[epochId]));
-                    _generatedReward = _generatedReward.add(epochEndBlocks[epochId].sub(epochEndBlocks[epochId - 1]).mul(epochBdoPerBlock[epochId]));
+                    if (_from >= epochEndBlocks[epochId - 1]) return _generatedReward.add(epochEndBlocks[epochId].sub(_from).mul(epocheBNBPerBlock[epochId]));
+                    _generatedReward = _generatedReward.add(epochEndBlocks[epochId].sub(epochEndBlocks[epochId - 1]).mul(epocheBNBPerBlock[epochId]));
                 }
-                return _generatedReward.add(epochEndBlocks[0].sub(_from).mul(epochBdoPerBlock[0]));
+                return _generatedReward.add(epochEndBlocks[0].sub(_from).mul(epocheBNBPerBlock[0]));
             }
         }
-        return _to.sub(_from).mul(epochBdoPerBlock[0]);
+        return _to.sub(_from).mul(epocheBNBPerBlock[0]);
     }
 
-    // View function to see pending BDOs on frontend.
-    function pendingBDO(uint256 _pid, address _user) external view returns (uint256) {
+    // View function to see pending eBNBs on frontend.
+    function pendingeBNB(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        uint256 accBdoPerShare = pool.accBdoPerShare;
+        uint256 acceBNBPerShare = pool.acceBNBPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 _generatedReward = getGeneratedReward(pool.lastRewardBlock, block.number);
-            uint256 _bdoReward = _generatedReward.mul(pool.allocPoint).div(totalAllocPoint);
-            accBdoPerShare = accBdoPerShare.add(_bdoReward.mul(1e18).div(lpSupply));
+            uint256 _eBNBReward = _generatedReward.mul(pool.allocPoint).div(totalAllocPoint);
+            acceBNBPerShare = acceBNBPerShare.add(_eBNBReward.mul(1e18).div(lpSupply));
         }
-        return user.amount.mul(accBdoPerShare).div(1e18).sub(user.rewardDebt);
+        return user.amount.mul(acceBNBPerShare).div(1e18).sub(user.rewardDebt);
     }
 
     // Update reward variables for all pools. Be careful of gas spending!
@@ -676,8 +676,8 @@ contract BdoRewardPool {
         }
         if (totalAllocPoint > 0) {
             uint256 _generatedReward = getGeneratedReward(pool.lastRewardBlock, block.number);
-            uint256 _bdoReward = _generatedReward.mul(pool.allocPoint).div(totalAllocPoint);
-            pool.accBdoPerShare = pool.accBdoPerShare.add(_bdoReward.mul(1e18).div(lpSupply));
+            uint256 _eBNBReward = _generatedReward.mul(pool.allocPoint).div(totalAllocPoint);
+            pool.acceBNBPerShare = pool.acceBNBPerShare.add(_eBNBReward.mul(1e18).div(lpSupply));
         }
         pool.lastRewardBlock = block.number;
     }
@@ -689,9 +689,9 @@ contract BdoRewardPool {
         UserInfo storage user = userInfo[_pid][_sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 _pending = user.amount.mul(pool.accBdoPerShare).div(1e18).sub(user.rewardDebt);
+            uint256 _pending = user.amount.mul(pool.acceBNBPerShare).div(1e18).sub(user.rewardDebt);
             if (_pending > 0) {
-                safeBdoTransfer(_sender, _pending);
+                safeeBNBTransfer(_sender, _pending);
                 emit RewardPaid(_sender, _pending);
             }
         }
@@ -699,7 +699,7 @@ contract BdoRewardPool {
             pool.lpToken.safeTransferFrom(_sender, address(this), _amount);
             user.amount = user.amount.add(_amount);
         }
-        user.rewardDebt = user.amount.mul(pool.accBdoPerShare).div(1e18);
+        user.rewardDebt = user.amount.mul(pool.acceBNBPerShare).div(1e18);
         emit Deposit(_sender, _pid, _amount);
     }
 
@@ -710,16 +710,16 @@ contract BdoRewardPool {
         UserInfo storage user = userInfo[_pid][_sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
-        uint256 _pending = user.amount.mul(pool.accBdoPerShare).div(1e18).sub(user.rewardDebt);
+        uint256 _pending = user.amount.mul(pool.acceBNBPerShare).div(1e18).sub(user.rewardDebt);
         if (_pending > 0) {
-            safeBdoTransfer(_sender, _pending);
+            safeeBNBTransfer(_sender, _pending);
             emit RewardPaid(_sender, _pending);
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
             pool.lpToken.safeTransfer(_sender, _amount);
         }
-        user.rewardDebt = user.amount.mul(pool.accBdoPerShare).div(1e18);
+        user.rewardDebt = user.amount.mul(pool.acceBNBPerShare).div(1e18);
         emit Withdraw(_sender, _pid, _amount);
     }
 
@@ -734,14 +734,14 @@ contract BdoRewardPool {
         emit EmergencyWithdraw(msg.sender, _pid, _amount);
     }
 
-    // Safe bdo transfer function, just in case if rounding error causes pool to not have enough BDOs.
-    function safeBdoTransfer(address _to, uint256 _amount) internal {
-        uint256 _bdoBal = bdo.balanceOf(address(this));
-        if (_bdoBal > 0) {
-            if (_amount > _bdoBal) {
-                bdo.safeTransfer(_to, _bdoBal);
+    // Safe eBNB transfer function, just in case if rounding error causes pool to not have enough eBNBs.
+    function safeeBNBTransfer(address _to, uint256 _amount) internal {
+        uint256 _eBNBBal = eBNB.balanceOf(address(this));
+        if (_eBNBBal > 0) {
+            if (_amount > _eBNBBal) {
+                eBNB.safeTransfer(_to, _eBNBBal);
             } else {
-                bdo.safeTransfer(_to, _amount);
+                eBNB.safeTransfer(_to, _amount);
             }
         }
     }
@@ -757,7 +757,7 @@ contract BdoRewardPool {
     ) external onlyOperator {
         if (block.number < epochEndBlocks[2] + BLOCKS_PER_WEEK * 26) {
             // do not allow to drain lpToken if less than 6 months after farming
-            require(_token != bdo, "!bdo");
+            require(_token != eBNB, "!eBNB");
             uint256 length = poolInfo.length;
             for (uint256 pid = 0; pid < length; ++pid) {
                 PoolInfo storage pool = poolInfo[pid];
