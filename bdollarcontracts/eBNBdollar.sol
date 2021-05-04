@@ -883,7 +883,7 @@ contract eBNBDollar is BEP20Burnable, Operator {
      * @notice Constructs the bDollar ERC-20 contract.
      */
     constructor() public BEP20("eBNBmon", "eBNBmon") {
-        // Mints 1 bDollar to contract creator for initial pool setup
+        // Mints 1 eBNBmon to contract creator for initial pool setup
         _mint(msg.sender, 1 ether);
     }
 
