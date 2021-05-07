@@ -970,7 +970,7 @@ contract Treasury is ContractGuard {
         return PERIOD;
     }
 
-  /* // oracle
+  // oracle
     function getDollarPrice() public view returns (uint256 dollarPrice) {
         try IOracle(dollarOracle).consult(dollar, 1e18) returns (uint144 price) {
             return uint256(price);
@@ -979,11 +979,11 @@ contract Treasury is ContractGuard {
         }
     }
     
-*/ 
-function getDollarPrice() public view returns (uint256 ) {
+ 
+/**function getDollarPrice() public view returns (uint256 ) {
      uint256 dollarPrice=1000000;
      return(dollarPrice);
-    }
+    }**/
     function getDollarUpdatedPrice() public view returns (uint256 _dollarPrice) {
         try IOracle(dollarOracle).twap(dollar, 1e18) returns (uint144 price) {
             return uint256(price);
