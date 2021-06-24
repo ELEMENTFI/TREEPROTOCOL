@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity >=0.6.12;
 
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+   
 
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
 
 /**
  * @dev Interface of the BEP20 standard as defined in the EIP.
@@ -479,31 +489,142 @@ contract ContractGuard {
         _status[block.number][msg.sender] = true;
     }
 }
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+contract Ownable is Context {
+    address public _owner;
 
-contract Boardroom is ContractGuard{
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    function initialize () public virtual {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
+contract Initializable  {
+
+  /**
+   * @dev Indicates that the contract has been initialized.
+   */
+  bool private initialized;
+
+  /**
+   * @dev Indicates that the contract is in the process of being initialized.
+   */
+  bool private initializing;
+
+  /**
+   * @dev Modifier to use in the initializer function of a contract.
+   */
+  modifier initializer() {
+    require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
+
+    bool isTopLevelCall = !initializing;
+    if (isTopLevelCall) {
+      initializing = true;
+      initialized = true;
+    }
+
+    _;
+
+    if (isTopLevelCall) {
+      initializing = false;
+    }
+  }
+
+  /// @dev Returns true if and only if the function is running in the constructor
+  function isConstructor() private view returns (bool) {
+    // extcodesize checks the size of the code stored in an address, and
+    // address returns the current address. Since the code is still not
+    // deployed when running a constructor, any checks on its code size will
+    // yield zero, making it an effective way to detect if a contract is
+    // under construction or not.
+    address self = address(this);
+    uint256 cs;
+    assembly { cs := extcodesize(self) }
+    return cs == 0;
+  }
+
+  // Reserved storage space to allow for layout changes in the future.
+  uint256[50] private ______gap;
+}
+
+contract Boardroom is ContractGuard,Context,Ownable,Initializable{
 using SafeBEP20 for IBEP20;
 using Address for address;
 using SafeMath for uint256;
 
-
 IBEP20 public black;
 
-   
 mapping(address => uint256) private _balances;
 mapping(address => uint256) public stakepoch;
-    
- address public owner;
+mapping(address => uint256) private stakeBalance ;
+mapping (address => uint256) private unLockTime;
+mapping(address => uint256) internal stakedTime;
+
  uint256 private _totalSupply;
  uint256 public startTime;
  uint256 public  PERIOD ;
- uint256  public withdrawLockupEpochs;
+ uint256 public withdrawLockupEpochs;
  uint256 public  rewardLockupEpochs;
  uint256 public rewardDistributeEpoch ;
  uint256 public _rewardPercent ;
- bool public initialized = false;
- mapping(address => uint256) internal rewards;
-  
+ uint256 public maxStakeAmount;
+ uint256 public lockPeriod;
+ uint256 public rewardStartDate;
  address public communityWallet;
+ address[] internal stakeholders;
  
  event Initialized(address indexed executor, uint256 at);
  event Staked(address indexed user, uint256 amount);
@@ -511,57 +632,46 @@ mapping(address => uint256) public stakepoch;
  event RewardPaid(address indexed user, uint256 reward);
  event RewardAdded(address indexed user, uint256 reward);   
  
-  modifier notInitialized {
-        require(!initialized, "Boardroom: already initialized");
-        _;
-    }
-    
-    
- modifier onlyOwner() {
-        require(owner == msg.sender, "Boardroom: caller is not the operator");
-        _;
-    }
-    
-    
- modifier directorExists {
+ 
+    modifier directorExists {
         require(balanceOf(msg.sender) > 0, "Boardroom: The director does not exist");
         _;
     }    
  
-address[] internal stakeholders;    
+    
  
- function initialize(
-        IBEP20 _black
-       
-    ) public notInitialized {
-        black = _black;
+    function initialize() public override  initializer {
         startTime = block.timestamp;
         withdrawLockupEpochs = 6; // Lock for 6 epochs (36h) before release withdraw
         rewardLockupEpochs = 3; // Lock for 3 epochs (18h) before release claimReward
-        initialized = true;
         rewardDistributeEpoch = 10;
         PERIOD = 2 minutes;
         _rewardPercent = 450;
-        communityWallet= address(0x31c2222F5b8D067D2D8904e89ba973851852e11C);
-        owner = msg.sender;
+        maxStakeAmount = 1000000 * 10**9;
+        lockPeriod=2 weeks;
+        rewardStartDate=block.timestamp + 12 days;
+        communityWallet= address(0x924a3E214908EDB568654c427F85cA05921E0818);
+        Ownable.initialize();
         emit Initialized(msg.sender, block.number);
     }
-/**
+    
+    /**
     * @notice A method to check if an address is a stakeholder.
     * @param _address The address to verify.
     * @return bool, uint256 Whether the address is a stakeholder,
     * and if so its position in the stakeholders array.
     */
-   function isStakeholder(address _address)
+    function isStakeholder(address _address)
        public
        view
        returns(bool, uint256)
-   {
-       for (uint256 s = 0; s < stakeholders.length; s += 1){
+    {
+       for (uint256 s = 0; s < stakeholders.length; s += 1)
+       {
            if (_address == stakeholders[s]) return (true, s);
-       }
+        }
        return (false, 0);
-   }
+    }
 
    /**
     * @notice A method to add a stakeholder.
@@ -582,46 +692,85 @@ address[] internal stakeholders;
        internal
    {
        (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
-       if(_isStakeholder){
+       if(_isStakeholder)
+       {
            stakeholders[s] = stakeholders[stakeholders.length - 1];
            stakeholders.pop();
        }
    }
+   
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
     
-    function balanceOfContract() public view returns (uint256) {
-        return black.balanceOf(address(this));
-    }
-
     function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     } 
 
     
     function canWithdraw(address _director) external view returns (bool) {
-        return stakepoch[_director] <= currentEpochPoint();
+        if(stakepoch[_director] > 0){
+             return stakepoch[_director] <= currentEpochPoint();
+        }
+        else{
+            return false;
+        }
     }
 
+   //checks the account is locked(true) or unlocked(false)
+    function lock(address account) public view returns(bool){
+      return unLockTime[account] > block.timestamp;
+    }
+    
+   //if sender is in frozen state,then this function returns epoch value remaining for the address for it to get unfrozen.
+    function secondsLeft(address account) public view returns(uint256){
+      if(lock(account)){
+         return  ( unLockTime[account] - block.timestamp );
+      }
+      else
+          return 0;
+    }
+
+    function checkStakeLimit(uint256 _stakeAmount) internal{	  
+      require(_stakeAmount <= maxStakeAmount,"Cannot stake  more than permissible limit");
+      uint256 balance =  stakeBalance[msg.sender]  + _stakeAmount;
+      if(balance == maxStakeAmount){        
+		 stakeBalance[msg.sender] = 0;        
+		 unLockTime[msg.sender] = block.timestamp + lockPeriod;        
+      }
+      else{
+        require(balance < maxStakeAmount,"cannot stake more than permissible limit");
+        stakeBalance[msg.sender] = balance;       
+      }
+	  
+    }
+   
+    /**
+    * @notice A method to allow a holder to stake black token in the contract.
+    */
     function stake(uint256 amount) public  onlyOneBlock {
-    require(amount > 0, "Boardroom: Cannot stake 0");
-    require(black.balanceOf(msg.sender) >= amount,"Insufficient balance");
-    uint256 stakedAmount =(amount * 90)/100;
-    _totalSupply = _totalSupply.add(stakedAmount);
-    _balances[msg.sender] = _balances[msg.sender].add(stakedAmount);
-    black.safeTransferFrom(msg.sender, address(this), amount);
-    stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
-    addStakeholder(msg.sender);
-    emit Staked(msg.sender, stakedAmount);
+        require(!lock(msg.sender),"sender is in locking state"); 
+        require(amount > 0, "Boardroom: Cannot stake 0");
+        require(black.balanceOf(msg.sender) >= amount,"Insufficient balance");
+        checkStakeLimit(amount);
+        uint256 stakedAmount =(amount * 90)/100;
+        _totalSupply = _totalSupply.add(stakedAmount);
+        _balances[msg.sender] = _balances[msg.sender].add(stakedAmount);
+        black.safeTransferFrom(msg.sender, address(this), amount);
+        stakedTime[msg.sender]=block.timestamp;
+        stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
+        addStakeholder(msg.sender);
+        emit Staked(msg.sender, stakedAmount);
     }
-
-   function withdraw(uint256 amount) public  onlyOneBlock directorExists  {
+    
+    /**
+    * @notice A method to allow a stakeholder to withdraw staked black token and reward  from contract.
+    */
+    function withdraw(uint256 amount) public  onlyOneBlock directorExists  {
         uint256 directorShare = _balances[msg.sender];
         require(amount > 0, "Boardroom: Cannot withdraw 0");
         require(directorShare >= amount, "Boardroom: withdraw request greater than staked amount");
         require (stakepoch[msg.sender] <= currentEpochPoint(), "Boardroom: still in withdraw lockup");
-        //claimReward();
         withdrawReward();
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = directorShare.sub(amount);
@@ -632,109 +781,146 @@ address[] internal stakeholders;
         emit Withdrawn(msg.sender, amount);
     }
     
-  
+    /**
+    * @notice A method to allow a stakeholder to withdraw staked black token from contract.
+    */
     
-     function exit() external {
+    function exit() external {
         uint256 directorShare = _balances[msg.sender];
         require(directorShare > 0, "Boardroom: Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(directorShare);
         _balances[msg.sender] = 0;
         black.safeTransfer(msg.sender, directorShare);
-        rewards[msg.sender] = 0;
         removeStakeholder(msg.sender);
+        stakepoch[msg.sender]=0;
         emit Withdrawn(msg.sender, directorShare);
     }
-    	
+   
 
    
-   /**
-    * @notice A method to allow a stakeholder to check his rewards.
-    * @param _stakeholder The stakeholder to check rewards for.
-    */
-   function rewardOf(address _stakeholder)
-       public
-       view
-       returns(uint256)
-   {
-       return rewards[_stakeholder];
-   }
    
    /**
     * @notice A simple method that calculates the rewards for each stakeholder.
     * @param _stakeholder The stakeholder to calculate rewards for.
     */
-   function calculateReward(address _stakeholder)
+   function calculateReward(address _stakeholder,uint256 _stakeTimeInSeconds)
        internal view
        returns(uint256)
    {
-       return _balances[_stakeholder] * (_rewardPercent) / 10000;
+       return _balances[_stakeholder] * (_stakeTimeInSeconds) / _rewardPercent;
    }
+   
+   
+   /**
+    * @notice A simple method that calculates the rewards for each stakeholder.
+    * @param _stakeholder The stakeholder to calculate rewards for.
+    */
+    //TODO change to msg.sender
+   function earned()
+       public view
+       returns(uint256)
+   { 
+       if(rewardStartDate <= block.timestamp){
+            uint256 stakeTimeInSeconds= block.timestamp - stakedTime[msg.sender];
+            return calculateReward(msg.sender,stakeTimeInSeconds);
+       }
+       else
+            return 0;
+       
+   }
+
+   
+
 
    /**
-    * @notice A method to distribute rewards to all stakeholders.
-    */
-   function distributeRewards()
-       public
-       
-   {
-       //uint256 time ;
-       //uint256 diff = currentEpochPoint() - time;
-       if((currentEpochPoint()>= rewardDistributeEpoch) ){
-         for (uint256 s = 0; s < stakeholders.length; s += 1){
-           address stakeholder = stakeholders[s];
-           uint256 reward = calculateReward(stakeholder);
-           rewards[stakeholder] = rewards[stakeholder].add(reward);
-         }   
-          //time = currentEpochPoint(); 
-       }
-       
-   }
-
-/**
     * @notice A method to allow a stakeholder to withdraw his rewards.
     */
-   function withdrawReward()
+    function withdrawReward()
        public
    {
+       require(rewardStartDate <= block.timestamp,"Reward not yet started");
        require (stakepoch[msg.sender] <= currentEpochPoint() + 3, "Boardroom: still in withdraw lockup");
-       uint256 reward = rewards[msg.sender];
-       rewards[msg.sender] = 0;
-      // _mint(msg.sender, reward);
+       uint256 reward = earned(msg.sender);
+      // rewards[msg.sender] = 0;
        black.safeTransferFrom(communityWallet,msg.sender,reward);
-       stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
+        if(_balances[msg.sender]>0){
+            stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
+        }
+        else{
+           stakepoch[msg.sender]=0;
+        }
    }
     
    
-      function currentEpochPoint() public view returns (uint256) {
-          uint256 epochtime = block.timestamp - startTime;
-          uint256 epochperiod =epochtime /PERIOD;
-       return epochperiod;  
+    function currentEpochPoint() public view returns (uint256) {
+        uint256 epochtime = block.timestamp - startTime;
+        uint256 epochperiod =epochtime /PERIOD;
+        return epochperiod;  
     }
     
-   // epoch
+  
     function nextEpochPoint() public view returns (uint256) {
-        return (startTime.add(currentEpochPoint().mul(PERIOD))).add(PERIOD);//10 + 2 *1 =12 +1 
+        return (startTime.add(currentEpochPoint().mul(PERIOD))).add(PERIOD); 
       
     }
+    
+    /**
+    * @dev setLockUp
+   */
 
-   function setLockUp(uint256 _withdrawLockupEpochs, uint256 _rewardLockupEpochs) external onlyOwner {
-        require(_withdrawLockupEpochs >= _rewardLockupEpochs && _withdrawLockupEpochs <= 56, "_withdrawLockupEpochs: out of range"); // <= 2 week
+    function setLockUp(uint256 _withdrawLockupEpochs, uint256 _rewardLockupEpochs) external onlyOwner {
+        require(_withdrawLockupEpochs >= _rewardLockupEpochs && _withdrawLockupEpochs <= 56, "_withdrawLockupEpochs: out of range"); 
         withdrawLockupEpochs = _withdrawLockupEpochs;
         rewardLockupEpochs = _rewardLockupEpochs;
     }
     
+    /**
+    * @dev setlockPeriod
+   */
     function setPeriod(uint256 _period) external onlyOwner {
         PERIOD = _period;
     }
     
+    /**
+    * @dev setRewardPercent
+   */
     function setRewardPercent(uint256 rewardPercent) external onlyOwner {
         _rewardPercent = rewardPercent;
     }
     
+    /**
+    * @dev setRewardDistribution
+   */
     function setRewardDistribution(uint256 _rewardDistributeEpoch) external onlyOwner {
         rewardDistributeEpoch = _rewardDistributeEpoch;
     }
+    
+    /**
+    * @dev setCommunityAddress
+   */
     function setCommunityAddress(address _communityAddress) external onlyOwner {
         communityWallet = _communityAddress;
     }
+    
+    /**
+    * @dev setlockPeriod
+   */
+    function setlockPeriod(uint256 _lockPeriod)public onlyOwner{
+     lockPeriod=_lockPeriod;
+  }
+  
+   /**
+    * @dev setblackaddress
+    * Initializing BLACK token as  BEP20
+   */
+   function setblackaddress(address _black)public onlyOwner{
+    black = IBEP20(_black);
+  }
+ /**
+    * @dev setlockPeriod
+   */
+    function setrewardStartDate(uint256 _rewardStartDate)public onlyOwner{
+     rewardStartDate = _rewardStartDate;
+  }
+    
 }
