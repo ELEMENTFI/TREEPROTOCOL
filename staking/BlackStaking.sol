@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
@@ -568,34 +567,44 @@ contract MasterChef is Context,Ownable,Initializable {
     //Todo maxlimit may be change
     uint256 public constant  maxStakeAmount = 1000000 * 10**9;
     //Todo lockperiod may be change 
-    uint256 public constant lockPeriod = 2 weeks;
+    // Once holder stakes maxStakeAmount, then he will not be able to stake any more coins for this time period
+    uint256 public constant stakingLockPeriod = 2 weeks;
     //Todo withdrawLockupPeriod may be change 
-    uint256 public constant withdrawLockupPeriod = 1 days;
+    // Once holder stakes coins, he can unstake only after below time period
+    uint256 public constant withdrawLockPeriod = 1 days;
+    //Contract deployment time
     uint256 public startTime;
-    uint256 public rewardStartdate;
+    //Date on which stakers start getting rewards 
+    uint256 public rewardStartDate;
     //Todo maxrewardlimit fixed
-    uint256 public rewardAmount;
+    uint256 public minRewardBalanceToClaim;
     
-    mapping(address => uint256) private stakelock;
-    mapping (address => uint256) private unLockTime;
-    mapping(address => uint256) private stakeBalance ;
+    // latest Staking time +  withdrawLockPeriod,  to find when can I unstake
+    mapping(address => uint256) private holderUnstakeRemainingTime;
+    
+    // once staking amount reaches maxStakeAmount, then it stores (current block time + stakingLockPeriod)
+    mapping (address => uint256) private holderNextStakingAllowedTime;
+    
+    // Holds the running staking balance for each holder for staking lock, here balance of a user can reach to 
+    // a maximum of maxStakeAmount
+    mapping(address => uint256) private holdersRunningStakeBalance;
     
     event Deposit(address indexed user, uint256 amount);
     event Withdraw(address indexed user, uint256 amount);
     event EmergencyWithdraw(address indexed user,  uint256 amount);
     
     function initialize ()  public override  initializer{
-    Ownable.initialize();
-    startBlock = block.number;
-    startTime = block.timestamp;
-    //TODO change rewardStartdate
-    rewardStartdate = block.timestamp + 2 minutes;
-    poolInfo.allocPoint=1000;
-    poolInfo.lastRewardBlock= startBlock;
-    poolInfo.accBlackPerShare= 0;
-    totalAllocPoint = 1000;
-    rewardAmount = 100 * 10**9 ;
-    BONUS_MULTIPLIER = 1;
+        Ownable.initialize();
+        startBlock = block.number;
+        startTime = block.timestamp;
+        //TODO change rewardStartdate
+        rewardStartDate = block.timestamp + 2 minutes;
+        poolInfo.allocPoint=1000;
+        poolInfo.lastRewardBlock= startBlock;
+        poolInfo.accBlackPerShare= 0;
+        totalAllocPoint = 1000;
+        minRewardBalanceToClaim = 100 * 10**9 ;
+        BONUS_MULTIPLIER = 1;
     }
 
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
@@ -603,8 +612,9 @@ contract MasterChef is Context,Ownable,Initializable {
     }
    
     // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if((stakelock[msg.sender] - withdrawLockupPeriod) >= (startTime + 1 days) ){
+    function getMultiplier(uint256 _from, uint256 _to) private view returns (uint256) {
+        //TODO change 1 days to double rewards period
+        if((holderUnstakeRemainingTime[msg.sender] - withdrawLockPeriod) >= (startTime + 1 days) ){
             return _to.sub(_from).mul(BONUS_MULTIPLIER);
         }
         else{
@@ -614,15 +624,15 @@ contract MasterChef is Context,Ownable,Initializable {
 
     // View function to see pending BLACKs on frontend.
     function pendingBlack(address _user) external view returns (uint256) {
-        if(rewardStartdate <= block.timestamp ){
+        if(rewardStartDate <= block.timestamp ){
             PoolInfo storage pool = poolInfo;
             UserInfo storage user = userInfo[_user];
             uint256 accBlackPerShare = pool.accBlackPerShare;
-            uint256 lpSupply = pool.lpToken.balanceOf(address(this));
-            if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 totalStakedTokens = pool.lpToken.balanceOf(address(this));
+            if (block.number > pool.lastRewardBlock && totalStakedTokens != 0) {
                 uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
                 uint256 blackReward = multiplier.mul(blackPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-                accBlackPerShare = accBlackPerShare.add(blackReward.mul(1e9).div(lpSupply));
+                accBlackPerShare = accBlackPerShare.add(blackReward.mul(1e9).div(totalStakedTokens));
             }
             return user.amount.mul(accBlackPerShare).div(1e9).sub(user.rewardDebt);
         }
@@ -630,7 +640,6 @@ contract MasterChef is Context,Ownable,Initializable {
             return 0;
         
     }
-
 
     // Update reward variables of the given pool to be up-to-date.
     function updatePool() public {
@@ -649,44 +658,43 @@ contract MasterChef is Context,Ownable,Initializable {
         pool.lastRewardBlock = block.number;
     }
 
-    // Deposit LP tokens to MasterChef for BLACK allocation.
+    // Deposit LP tokens to MasterChef for BLACK allocation
     function deposit(uint256 _amount) public {
-        require(!lock(msg.sender),"sender is in locking state");
-	    uint256 stakedAmount =(_amount * 90)/100;
+        require(!lock(msg.sender),"Sender is in locking state !");
+        require(_amount > 0, "Deposit amount cannot be less than zero !");
 	    checkStakeLimit(_amount);
         PoolInfo storage pool = poolInfo;
         UserInfo storage user = userInfo[msg.sender];
         updatePool();
-       
-        if (_amount > 0) {
-            pool.lpToken.transferFrom(address(msg.sender), address(this), _amount);
-            user.amount = user.amount.add(stakedAmount);
-        }
+        uint256 stakedAmount =(_amount * 90)/100;
+        user.amount = user.amount.add(stakedAmount);
         user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
-        stakelock[msg.sender]= block.timestamp + withdrawLockupPeriod;
+        holderUnstakeRemainingTime[msg.sender]= block.timestamp + withdrawLockPeriod;
+        bool flag = pool.lpToken.transferFrom(address(msg.sender), address(this), _amount);
+        require(flag, "Deposit unsuccessful, hence aborting the transaction !");
         emit Deposit(msg.sender, stakedAmount);
     }
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _amount) public {
-        require(rewardStartdate <= block.timestamp,"reward not yet Started" );
-        require (stakelock[msg.sender] <= block.timestamp, " still in withdraw lockup");
+        require(rewardStartDate <= block.timestamp,"Rewards allocation period yet to start !" );
+        require (holderUnstakeRemainingTime[msg.sender] <= block.timestamp, "Holder is in locked state !");
+        require(_amount > 0, "withdraw amount cannot be less than zero !");
         PoolInfo storage pool = poolInfo;
         UserInfo storage user = userInfo[msg.sender];
-        require(user.amount >= _amount, "withdraw: not good");
+        require(user.amount >= _amount, "Insufficient balance !");
         updatePool();
+        user.amount = user.amount.sub(_amount);
+        user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
         uint256 pending = user.amount.mul(pool.accBlackPerShare).div(1e9).sub(user.rewardDebt);
         if(pending > 0) {
-            safeBlackTransfer(msg.sender, pending);
+            bool flag = black.transferFrom(communitywallet,msg.sender, pending);
+            require(flag, "Withdraw unsuccessful, during reward transfer, hence aborting the transaction !");
         }
-        if(_amount > 0) {
-            user.amount = user.amount.sub(_amount);
-            pool.lpToken.transfer(address(msg.sender), _amount);
-        }
-        user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
+        bool flag =  pool.lpToken.transfer(msg.sender, _amount);
+        require(flag, "Withdraw unsuccessful, during staking amount transfer, hence aborting the transaction !");
         emit Withdraw(msg.sender, _amount);
     }
-
 
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -694,7 +702,7 @@ contract MasterChef is Context,Ownable,Initializable {
         PoolInfo storage pool = poolInfo;
         UserInfo storage user = userInfo[msg.sender];
 		uint256 currentBalance = user.amount;
-		require(currentBalance>0,"Insufficient balance !");
+		require(currentBalance > 0,"Insufficient balance !");
 		user.amount = 0;
         user.rewardDebt = 0;
         bool flag = pool.lpToken.transfer(address(msg.sender), currentBalance);
@@ -702,56 +710,48 @@ contract MasterChef is Context,Ownable,Initializable {
         emit EmergencyWithdraw(msg.sender, user.amount);
         
     }
-    
-
-    // Safe black transfer function, just in case if rounding error causes pool to not have enough BLACKs.
-    function safeBlackTransfer(address _to, uint256 _amount) internal {
-        black.transferFrom(communitywallet,_to, _amount);
-    }
 
    //---------------------locking-------------------------//
     //checks the account is locked(true) or unlocked(false)
     function lock(address account) public view returns(bool){
-        return unLockTime[account] > block.timestamp;
+        return holderNextStakingAllowedTime[account] > block.timestamp;
     }
 	
-	 //if sender is in frozen state,then this function returns epoch value remaining for the address for it to get unfrozen.
+	 // if sender is in frozen state,then this function returns epoch value remaining for the address for it to get unfrozen.
     function secondsLeft(address account) public view returns(uint256){
         if(lock(account)){
-            return  ( unLockTime[account] - block.timestamp );
+            return  ( holderNextStakingAllowedTime[account] - block.timestamp );
         }
          else
             return 0;
     }
  
- 
- 
     function checkStakeLimit(uint256 _stakeAmount) internal{	  
         require(_stakeAmount <= maxStakeAmount,"Cannot stake  more than permissible limit");
-        uint256 balance =  stakeBalance[msg.sender]  + _stakeAmount;
+        uint256 balance =  holdersRunningStakeBalance[msg.sender]  + _stakeAmount;
         if(balance == maxStakeAmount) {
-            stakeBalance[msg.sender] = 0;        
-		    unLockTime[msg.sender] = block.timestamp + lockPeriod;        
+            holdersRunningStakeBalance[msg.sender] = 0;        
+		    holderNextStakingAllowedTime[msg.sender] = block.timestamp + stakingLockPeriod;        
         }
         else{
             require(balance < maxStakeAmount,"cannot stake more than permissible limit");
-            stakeBalance[msg.sender] = balance;       
+            holdersRunningStakeBalance[msg.sender] = balance;       
         }
-	  
     }
     
     //----------------------endlocking-----//
    //------------------claim reward----------------------------//
    
    function claimReward() external {
-        require(rewardStartdate <= block.timestamp,"reward not yet Started" );
+        require(rewardStartDate <= block.timestamp,"Rewards not yet Started !" );
         PoolInfo storage pool = poolInfo;
         UserInfo storage user = userInfo[msg.sender];
         updatePool();
-        uint256 pending = user.amount.mul(pool.accBlackPerShare).div(1e9).sub(user.rewardDebt);
-        require(pending >= rewardAmount,"reward Limit for claiming not reached"); 
-        safeBlackTransfer(msg.sender, pending);
         user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
+        uint256 pending = user.amount.mul(pool.accBlackPerShare).div(1e9).sub(user.rewardDebt);
+        require(pending >= minRewardBalanceToClaim,"reward Limit for claiming not reached"); 
+        bool flag = black.transferFrom(communitywallet,msg.sender, pending);
+        require(flag, "Claim reward unsuccessful, hence aborting the transaction !");
         emit Withdraw(msg.sender,pending);
    }
    
@@ -773,29 +773,26 @@ contract MasterChef is Context,Ownable,Initializable {
     }
     
     function setRewardStartDate(uint256 _rewardStartdate) public onlyOwner {
-       rewardStartdate = _rewardStartdate;
+       rewardStartDate = _rewardStartdate;
     }
     
-    function setRewardAmount(uint256 _rewardAmount) public onlyOwner {
-       rewardAmount = _rewardAmount;
+    function setRewardAmount(uint256 _minRewardBalanceToClaim) public onlyOwner {
+       minRewardBalanceToClaim = _minRewardBalanceToClaim;
     }
     
     function unLockWeeklyLock(address account) public onlyOwner{
-        unLockTime[account] = block.timestamp;
+        holderNextStakingAllowedTime[account] = block.timestamp;
     }
     
     function unLockStakeHolder(address account) public onlyOwner{
-        stakelock[account] = block.timestamp;
+        holderUnstakeRemainingTime[account] = block.timestamp;
     }
     
-    function setblackaddress(address  _black)public onlyOwner{
-     black = IBEP20( _black);
-     poolInfo.lpToken= black;
+    function setblackaddress(address  _black) public onlyOwner{
+        black = IBEP20( _black);
+        poolInfo.lpToken= black;
     }
-  
     function setCommunityWallet(address _communitywallet) public onlyOwner{
         communitywallet = _communitywallet;
     }
-    
-   
 }
