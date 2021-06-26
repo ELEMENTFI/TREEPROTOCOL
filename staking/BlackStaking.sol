@@ -1,81 +1,17 @@
-// SPDX-License-Identifier: MIT
 
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+   
 
-
-/**
- * @dev Interface of the BEP20 standard as defined in the EIP.
- */
-interface IBEP20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
 }
 
 /**
@@ -235,6 +171,80 @@ library SafeMath {
 }
 
 /**
+ * @dev Interface of the ERC20 standard as defined in the EIP.
+ */
+interface IBEP20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+/**
  * @dev Collection of functions related to the address type
  */
 library Address {
@@ -256,14 +266,14 @@ library Address {
      * ====
      */
     function isContract(address account) internal view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
         // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
+        assembly { size := extcodesize(account) }
+        return size > 0;
     }
 
     /**
@@ -319,7 +329,7 @@ library Address {
      * _Available since v3.1._
      */
     function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
-        return _functionCallWithValue(target, data, 0, errorMessage);
+        return functionCallWithValue(target, data, 0, errorMessage);
     }
 
     /**
@@ -328,7 +338,7 @@ library Address {
      *
      * Requirements:
      *
-     * - the calling contract must have an ETH balance of at least `value`.
+     * - the calling contract must have an BNB balance of at least `value`.
      * - the called Solidity function must be `payable`.
      *
      * _Available since v3.1._
@@ -345,14 +355,38 @@ library Address {
      */
     function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
-        return _functionCallWithValue(target, data, value, errorMessage);
-    }
-
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) public returns (bytes memory) {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
+        (bool success, bytes memory returndata) = target.call{ value: value }(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
+        return functionStaticCall(target, data, "Address: low-level static call failed");
+    }
+
+    /**
+     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
+     * but performing a static call.
+     *
+     * _Available since v3.3._
+     */
+    function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {
+        require(isContract(target), "Address: static call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.staticcall(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    function _verifyCallResult(bool success, bytes memory returndata, string memory errorMessage) private pure returns(bytes memory) {
         if (success) {
             return returndata;
         } else {
@@ -372,369 +406,396 @@ library Address {
     }
 }
 /**
- * @title SafeBEP20
- * @dev Wrappers around BEP20 operations that throw on failure (when the token
- * contract returns false). Tokens that return no value (and instead revert or
- * throw on failure) are also supported, non-reverting calls are assumed to be
- * successful.
- * To use this library you can add a `using SafeBEP20 for IBEP20;` statement to your contract,
- * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
  */
-library SafeBEP20 {
-    using SafeMath for uint256;
-    using Address for address;
+contract Ownable is Context {
+    address public _owner;
 
-    function safeTransfer(
-        IBEP20 token,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    function safeTransferFrom(
-        IBEP20 token,
-        address from,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    function initialize () public virtual {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
     }
 
     /**
-     * @dev Deprecated. This function has issues similar to the ones found in
-     * {IBEP20-approve}, and its usage is discouraged.
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
      *
-     * Whenever possible, use {safeIncreaseAllowance} and
-     * {safeDecreaseAllowance} instead.
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
      */
-    function safeApprove(
-        IBEP20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeBEP20: approve from non-zero to non-zero allowance");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(
-        IBEP20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(
-        IBEP20 token,
-        address spender,
-        uint256 value
-    ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeBEP20: decreased allowance below zero");
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
     }
 
     /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
      */
-    function _callOptionalReturn(IBEP20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
-        // the target address contains contract code and also asserts for success in the low-level call.
-
-        bytes memory returndata = address(token).functionCall(data, "SafeBEP20: low-level call failed");
-        if (returndata.length > 0) {
-            // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeBEP20: BEP20 operation did not succeed");
-        }
-    }
-}
-contract ContractGuard {
-    mapping(uint256 => mapping(address => bool)) private _status;
-
-    function checkSameOriginReentranted() internal view returns (bool) {
-        return _status[block.number][tx.origin];
-    }
-
-    function checkSameSenderReentranted() internal view returns (bool) {
-        return _status[block.number][msg.sender];
-    }
-
-    modifier onlyOneBlock() {
-        require(!checkSameOriginReentranted(), "ContractGuard: one block, one function");
-        require(!checkSameSenderReentranted(), "ContractGuard: one block, one function");
-
-        _;
-
-        _status[block.number][tx.origin] = true;
-        _status[block.number][msg.sender] = true;
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 }
 
-contract Boardroom is ContractGuard{
-using SafeBEP20 for IBEP20;
-using Address for address;
-using SafeMath for uint256;
+contract Initializable  {
+
+  /**
+   * @dev Indicates that the contract has been initialized.
+   */
+  bool private initialized;
+
+  /**
+   * @dev Indicates that the contract is in the process of being initialized.
+   */
+  bool private initializing;
+
+  /**
+   * @dev Modifier to use in the initializer function of a contract.
+   */
+  modifier initializer() {
+    require(initializing || isConstructor() || !initialized, "Contract instance has already been initialized");
+
+    bool isTopLevelCall = !initializing;
+    if (isTopLevelCall) {
+      initializing = true;
+      initialized = true;
+    }
+
+    _;
+
+    if (isTopLevelCall) {
+      initializing = false;
+    }
+  }
+
+  /// @dev Returns true if and only if the function is running in the constructor
+  function isConstructor() private view returns (bool) {
+    // extcodesize checks the size of the code stored in an address, and
+    // address returns the current address. Since the code is still not
+    // deployed when running a constructor, any checks on its code size will
+    // yield zero, making it an effective way to detect if a contract is
+    // under construction or not.
+    address self = address(this);
+    uint256 cs;
+    assembly { cs := extcodesize(self) }
+    return cs == 0;
+  }
+
+  // Reserved storage space to allow for layout changes in the future.
+  uint256[50] private ______gap;
+}
 
 
-IBEP20 public black;
+contract MasterChef is Context,Ownable,Initializable {
+    using SafeMath for uint256;
+ 
 
+    // Info of each user.
+    struct UserInfo {
+        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 rewardDebt; // Reward debt. See explanation below.
+        //
+        // We do some fancy math here. Basically, any point in time, the amount of BLACKs
+        // entitled to a user but is pending to be distributed is:
+        //
+        //   pending reward = (user.amount * pool.accBlackPerShare) - user.rewardDebt
+        //
+        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+        //   1. The pool's `accBlackPerShare` (and `lastRewardBlock`) gets updated.
+        //   2. User receives the pending reward sent to his/her address.
+        //   3. User's `amount` gets updated.
+        //   4. User's `rewardDebt` gets updated.
+    }
+
+    // Info of each pool.
+    struct PoolInfo {
+        IBEP20 lpToken;           // Address of LP token contract.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. BLACKs to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that BLACKs distribution occurs.
+        uint256 accBlackPerShare; // Accumulated BLACKs per share, times 1e9. See below.
+    }
+
+    // The BLACK TOKEN!
+    IBEP20 public black;
    
-mapping(address => uint256) private _balances;
-mapping(address => uint256) public stakepoch;
-    
- address public owner;
- uint256 private _totalSupply;
- uint256 public startTime;
- uint256 public  PERIOD ;
- uint256  public withdrawLockupEpochs;
- uint256 public  rewardLockupEpochs;
- uint256 public rewardDistributeEpoch ;
- uint256 public _rewardPercent ;
- bool public initialized = false;
- mapping(address => uint256) internal rewards;
-  
- address public communityWallet;
- 
- event Initialized(address indexed executor, uint256 at);
- event Staked(address indexed user, uint256 amount);
- event Withdrawn(address indexed user, uint256 amount);
- event RewardPaid(address indexed user, uint256 reward);
- event RewardAdded(address indexed user, uint256 reward);   
- 
-  modifier notInitialized {
-        require(!initialized, "Boardroom: already initialized");
-        _;
-    }
-    
-    
- modifier onlyOwner() {
-        require(owner == msg.sender, "Boardroom: caller is not the operator");
-        _;
-    }
-    
-    
- modifier directorExists {
-        require(balanceOf(msg.sender) > 0, "Boardroom: The director does not exist");
-        _;
-    }    
- 
-address[] internal stakeholders;    
- 
- function initialize(
-        IBEP20 _black
-       
-    ) public notInitialized {
-        black = _black;
-        startTime = block.timestamp;
-        withdrawLockupEpochs = 6; // Lock for 6 epochs (36h) before release withdraw
-        rewardLockupEpochs = 3; // Lock for 3 epochs (18h) before release claimReward
-        initialized = true;
-        rewardDistributeEpoch = 10;
-        PERIOD = 2 minutes;
-        _rewardPercent = 450;
-        communityWallet= address(0x31c2222F5b8D067D2D8904e89ba973851852e11C);
-        owner = msg.sender;
-        emit Initialized(msg.sender, block.number);
-    }
-/**
-    * @notice A method to check if an address is a stakeholder.
-    * @param _address The address to verify.
-    * @return bool, uint256 Whether the address is a stakeholder,
-    * and if so its position in the stakeholders array.
-    */
-   function isStakeholder(address _address)
-       public
-       view
-       returns(bool, uint256)
-   {
-       for (uint256 s = 0; s < stakeholders.length; s += 1){
-           if (_address == stakeholders[s]) return (true, s);
-       }
-       return (false, 0);
-   }
+    // Dev address.
+    address public communitywallet;
+    // BLACK tokens created per block.
+    uint256 public blackPerBlock;
+    // Bonus muliplier for early black makers.
+    uint256 public BONUS_MULTIPLIER;
 
-   /**
-    * @notice A method to add a stakeholder.
-    * @param _stakeholder The stakeholder to add.
-    */
-   function addStakeholder(address _stakeholder)
-       internal
-   {
-       (bool _isStakeholder, ) = isStakeholder(_stakeholder);
-       if(!_isStakeholder) stakeholders.push(_stakeholder);
-   }
-
-   /**
-    * @notice A method to remove a stakeholder.
-    * @param _stakeholder The stakeholder to remove.
-    */
-   function removeStakeholder(address _stakeholder)
-       internal
-   {
-       (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
-       if(_isStakeholder){
-           stakeholders[s] = stakeholders[stakeholders.length - 1];
-           stakeholders.pop();
-       }
-   }
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
+    // Info of each pool.
+    PoolInfo public poolInfo;
+    // Info of each user that stakes LP tokens.
+    mapping  (address => UserInfo) public userInfo;
+    // Total allocation points. Must be the sum of all allocation points in all pools.
+    uint256 public totalAllocPoint = 0;
+    // The block number when BLACK mining starts.
+    uint256 public startBlock;
+    //Todo maxlimit may be change
+    uint256 public constant  maxStakeAmount = 1000000 * 10**9;
+    //Todo lockperiod may be change 
+    uint256 public constant lockPeriod = 2 weeks;
+    //Todo withdrawLockupPeriod may be change 
+    uint256 public constant withdrawLockupPeriod = 1 days;
+    uint256 public startTime;
+    uint256 public rewardStartdate;
+    //Todo maxrewardlimit fixed
+    uint256 public rewardAmount;
     
-    function balanceOfContract() public view returns (uint256) {
-        return black.balanceOf(address(this));
+    mapping(address => uint256) private stakelock;
+    mapping (address => uint256) private unLockTime;
+    mapping(address => uint256) private stakeBalance ;
+    
+    event Deposit(address indexed user, uint256 amount);
+    event Withdraw(address indexed user, uint256 amount);
+    event EmergencyWithdraw(address indexed user,  uint256 amount);
+    
+    function initialize ()  public override  initializer{
+    Ownable.initialize();
+    startBlock = block.number;
+    startTime = block.timestamp;
+    //TODO change rewardStartdate
+    rewardStartdate = block.timestamp + 2 minutes;
+    poolInfo.allocPoint=1000;
+    poolInfo.lastRewardBlock= startBlock;
+    poolInfo.accBlackPerShare= 0;
+    totalAllocPoint = 1000;
+    rewardAmount = 100 * 10**9 ;
+    BONUS_MULTIPLIER = 1;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
-    } 
-
-    
-    function canWithdraw(address _director) external view returns (bool) {
-        return stakepoch[_director] <= currentEpochPoint();
+    function updateMultiplier(uint256 multiplierNumber) public onlyOwner {
+        BONUS_MULTIPLIER = multiplierNumber;
     }
-
-    function stake(uint256 amount) public  onlyOneBlock {
-    require(amount > 0, "Boardroom: Cannot stake 0");
-    require(black.balanceOf(msg.sender) >= amount,"Insufficient balance");
-    uint256 stakedAmount =(amount * 90)/100;
-    _totalSupply = _totalSupply.add(stakedAmount);
-    _balances[msg.sender] = _balances[msg.sender].add(stakedAmount);
-    black.safeTransferFrom(msg.sender, address(this), amount);
-    stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
-    addStakeholder(msg.sender);
-    emit Staked(msg.sender, stakedAmount);
-    }
-
-   function withdraw(uint256 amount) public  onlyOneBlock directorExists  {
-        uint256 directorShare = _balances[msg.sender];
-        require(amount > 0, "Boardroom: Cannot withdraw 0");
-        require(directorShare >= amount, "Boardroom: withdraw request greater than staked amount");
-        require (stakepoch[msg.sender] <= currentEpochPoint(), "Boardroom: still in withdraw lockup");
-        //claimReward();
-        withdrawReward();
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = directorShare.sub(amount);
-        black.safeTransfer(msg.sender, amount);
-        if(_balances[msg.sender] == 0){
-            removeStakeholder(msg.sender);
+   
+    // Return reward multiplier over the given _from to _to block.
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
+        if((stakelock[msg.sender] - withdrawLockupPeriod) >= (startTime + 1 days) ){
+            return _to.sub(_from).mul(BONUS_MULTIPLIER);
         }
-        emit Withdrawn(msg.sender, amount);
+        else{
+            return _to.sub(_from).mul(BONUS_MULTIPLIER * 2);
+        }
+    }
+
+    // View function to see pending BLACKs on frontend.
+    function pendingBlack(address _user) external view returns (uint256) {
+        if(rewardStartdate <= block.timestamp ){
+            PoolInfo storage pool = poolInfo;
+            UserInfo storage user = userInfo[_user];
+            uint256 accBlackPerShare = pool.accBlackPerShare;
+            uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+            if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+                uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+                uint256 blackReward = multiplier.mul(blackPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+                accBlackPerShare = accBlackPerShare.add(blackReward.mul(1e9).div(lpSupply));
+            }
+            return user.amount.mul(accBlackPerShare).div(1e9).sub(user.rewardDebt);
+        }
+        else
+            return 0;
+        
+    }
+
+
+    // Update reward variables of the given pool to be up-to-date.
+    function updatePool() public {
+        PoolInfo storage pool = poolInfo;
+        if (block.number <= pool.lastRewardBlock) {
+            return;
+        }
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        if (lpSupply == 0) {
+            pool.lastRewardBlock = block.number;
+            return;
+        }
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 blackReward = multiplier.mul(blackPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        pool.accBlackPerShare = pool.accBlackPerShare.add(blackReward.mul(1e9).div(lpSupply));
+        pool.lastRewardBlock = block.number;
+    }
+
+    // Deposit LP tokens to MasterChef for BLACK allocation.
+    function deposit(uint256 _amount) public {
+        require(!lock(msg.sender),"sender is in locking state");
+	    uint256 stakedAmount =(_amount * 90)/100;
+	    checkStakeLimit(_amount);
+        PoolInfo storage pool = poolInfo;
+        UserInfo storage user = userInfo[msg.sender];
+        updatePool();
+       
+        if (_amount > 0) {
+            pool.lpToken.transferFrom(address(msg.sender), address(this), _amount);
+            user.amount = user.amount.add(stakedAmount);
+        }
+        user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
+        stakelock[msg.sender]= block.timestamp + withdrawLockupPeriod;
+        emit Deposit(msg.sender, stakedAmount);
+    }
+
+    // Withdraw LP tokens from MasterChef.
+    function withdraw(uint256 _amount) public {
+        require(rewardStartdate <= block.timestamp,"reward not yet Started" );
+        require (stakelock[msg.sender] <= block.timestamp, " still in withdraw lockup");
+        PoolInfo storage pool = poolInfo;
+        UserInfo storage user = userInfo[msg.sender];
+        require(user.amount >= _amount, "withdraw: not good");
+        updatePool();
+        uint256 pending = user.amount.mul(pool.accBlackPerShare).div(1e9).sub(user.rewardDebt);
+        if(pending > 0) {
+            safeBlackTransfer(msg.sender, pending);
+        }
+        if(_amount > 0) {
+            user.amount = user.amount.sub(_amount);
+            pool.lpToken.transfer(address(msg.sender), _amount);
+        }
+        user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
+        emit Withdraw(msg.sender, _amount);
+    }
+
+
+
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    function emergencyWithdraw() public {
+        PoolInfo storage pool = poolInfo;
+        UserInfo storage user = userInfo[msg.sender];
+		uint256 currentBalance = user.amount;
+		require(currentBalance>0,"Insufficient balance !");
+		user.amount = 0;
+        user.rewardDebt = 0;
+        bool flag = pool.lpToken.transfer(address(msg.sender), currentBalance);
+		require(flag, "Transfer unsuccessful !");
+        emit EmergencyWithdraw(msg.sender, user.amount);
+        
     }
     
+
+    // Safe black transfer function, just in case if rounding error causes pool to not have enough BLACKs.
+    function safeBlackTransfer(address _to, uint256 _amount) internal {
+        black.transferFrom(communitywallet,_to, _amount);
+    }
+
+   //---------------------locking-------------------------//
+    //checks the account is locked(true) or unlocked(false)
+    function lock(address account) public view returns(bool){
+        return unLockTime[account] > block.timestamp;
+    }
+	
+	 //if sender is in frozen state,then this function returns epoch value remaining for the address for it to get unfrozen.
+    function secondsLeft(address account) public view returns(uint256){
+        if(lock(account)){
+            return  ( unLockTime[account] - block.timestamp );
+        }
+         else
+            return 0;
+    }
+ 
+ 
+ 
+    function checkStakeLimit(uint256 _stakeAmount) internal{	  
+        require(_stakeAmount <= maxStakeAmount,"Cannot stake  more than permissible limit");
+        uint256 balance =  stakeBalance[msg.sender]  + _stakeAmount;
+        if(balance == maxStakeAmount) {
+            stakeBalance[msg.sender] = 0;        
+		    unLockTime[msg.sender] = block.timestamp + lockPeriod;        
+        }
+        else{
+            require(balance < maxStakeAmount,"cannot stake more than permissible limit");
+            stakeBalance[msg.sender] = balance;       
+        }
+	  
+    }
+    
+    //----------------------endlocking-----//
+   //------------------claim reward----------------------------//
+   
+   function claimReward() external {
+        require(rewardStartdate <= block.timestamp,"reward not yet Started" );
+        PoolInfo storage pool = poolInfo;
+        UserInfo storage user = userInfo[msg.sender];
+        updatePool();
+        uint256 pending = user.amount.mul(pool.accBlackPerShare).div(1e9).sub(user.rewardDebt);
+        require(pending >= rewardAmount,"reward Limit for claiming not reached"); 
+        safeBlackTransfer(msg.sender, pending);
+        user.rewardDebt = user.amount.mul(pool.accBlackPerShare).div(1e9);
+        emit Withdraw(msg.sender,pending);
+   }
+   
+   
+   //----------------reward end------------------------------------------------//
+
+  //----------setter---------------------------------------------//
+
+    function setBlackPerBlock(uint256 _blackPerBlock) public onlyOwner {
+        blackPerBlock = _blackPerBlock;
+    }
+    
+     function setTotalAllocationPoint(uint256 _totalAllocPoint) public onlyOwner {
+        totalAllocPoint = _totalAllocPoint;
+    }
+    
+     function setAllocationPoint(uint256 _allocPoint) public onlyOwner {
+        poolInfo.allocPoint = _allocPoint;
+    }
+    
+    function setRewardStartDate(uint256 _rewardStartdate) public onlyOwner {
+       rewardStartdate = _rewardStartdate;
+    }
+    
+    function setRewardAmount(uint256 _rewardAmount) public onlyOwner {
+       rewardAmount = _rewardAmount;
+    }
+    
+    function unLockWeeklyLock(address account) public onlyOwner{
+        unLockTime[account] = block.timestamp;
+    }
+    
+    function unLockStakeHolder(address account) public onlyOwner{
+        stakelock[account] = block.timestamp;
+    }
+    
+    function setblackaddress(address  _black)public onlyOwner{
+     black = IBEP20( _black);
+     poolInfo.lpToken= black;
+    }
   
-    
-     function exit() external {
-        uint256 directorShare = _balances[msg.sender];
-        require(directorShare > 0, "Boardroom: Cannot withdraw 0");
-        _totalSupply = _totalSupply.sub(directorShare);
-        _balances[msg.sender] = 0;
-        black.safeTransfer(msg.sender, directorShare);
-        rewards[msg.sender] = 0;
-        removeStakeholder(msg.sender);
-        emit Withdrawn(msg.sender, directorShare);
+    function setCommunityWallet(address _communitywallet) public onlyOwner{
+        communitywallet = _communitywallet;
     }
-    	
-
-   
-   /**
-    * @notice A method to allow a stakeholder to check his rewards.
-    * @param _stakeholder The stakeholder to check rewards for.
-    */
-   function rewardOf(address _stakeholder)
-       public
-       view
-       returns(uint256)
-   {
-       return rewards[_stakeholder];
-   }
-   
-   /**
-    * @notice A simple method that calculates the rewards for each stakeholder.
-    * @param _stakeholder The stakeholder to calculate rewards for.
-    */
-   function calculateReward(address _stakeholder)
-       internal view
-       returns(uint256)
-   {
-       return _balances[_stakeholder] * (_rewardPercent) / 10000;
-   }
-
-   /**
-    * @notice A method to distribute rewards to all stakeholders.
-    */
-   function distributeRewards()
-       public
-       
-   {
-       //uint256 time ;
-       //uint256 diff = currentEpochPoint() - time;
-       if((currentEpochPoint()>= rewardDistributeEpoch) ){
-         for (uint256 s = 0; s < stakeholders.length; s += 1){
-           address stakeholder = stakeholders[s];
-           uint256 reward = calculateReward(stakeholder);
-           rewards[stakeholder] = rewards[stakeholder].add(reward);
-         }   
-          //time = currentEpochPoint(); 
-       }
-       
-   }
-
-/**
-    * @notice A method to allow a stakeholder to withdraw his rewards.
-    */
-   function withdrawReward()
-       public
-   {
-       require (stakepoch[msg.sender] <= currentEpochPoint() + 3, "Boardroom: still in withdraw lockup");
-       uint256 reward = rewards[msg.sender];
-       rewards[msg.sender] = 0;
-      // _mint(msg.sender, reward);
-       black.safeTransferFrom(communityWallet,msg.sender,reward);
-       stakepoch[msg.sender]=currentEpochPoint() + withdrawLockupEpochs;
-   }
     
    
-      function currentEpochPoint() public view returns (uint256) {
-          uint256 epochtime = block.timestamp - startTime;
-          uint256 epochperiod =epochtime /PERIOD;
-       return epochperiod;  
-    }
-    
-   // epoch
-    function nextEpochPoint() public view returns (uint256) {
-        return (startTime.add(currentEpochPoint().mul(PERIOD))).add(PERIOD);//10 + 2 *1 =12 +1 
-      
-    }
-
-   function setLockUp(uint256 _withdrawLockupEpochs, uint256 _rewardLockupEpochs) external onlyOwner {
-        require(_withdrawLockupEpochs >= _rewardLockupEpochs && _withdrawLockupEpochs <= 56, "_withdrawLockupEpochs: out of range"); // <= 2 week
-        withdrawLockupEpochs = _withdrawLockupEpochs;
-        rewardLockupEpochs = _rewardLockupEpochs;
-    }
-    
-    function setPeriod(uint256 _period) external onlyOwner {
-        PERIOD = _period;
-    }
-    
-    function setRewardPercent(uint256 rewardPercent) external onlyOwner {
-        _rewardPercent = rewardPercent;
-    }
-    
-    function setRewardDistribution(uint256 _rewardDistributeEpoch) external onlyOwner {
-        rewardDistributeEpoch = _rewardDistributeEpoch;
-    }
-    function setCommunityAddress(address _communityAddress) external onlyOwner {
-        communityWallet = _communityAddress;
-    }
 }
