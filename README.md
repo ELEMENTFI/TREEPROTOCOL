@@ -1,6 +1,6 @@
 # TreeProtocol
 
-TREE PROTOCOL is the 1st three dimensional asset class powering the Algorand blockchain ecosystems
+TREE PROTOCOL is the 1st three dimensional asset class powering the Algorand blockchain ecosystem
 
 
 # Contribute:
