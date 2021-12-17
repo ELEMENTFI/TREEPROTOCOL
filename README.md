@@ -1,6 +1,6 @@
 # TreeProtocol
 
-TREE PROTOCOL is the 1st three dimensional asset class powering the Algorand blockchain ecosystem
+The first three-dimensional asset class group based on the TREE stabilization protocol standards where buying and selling pressure autonomously balance each other in a closed ecosystem. The protocol is intelligently designed such that the user's panic sell due to market shock will work as a catalyst to fuel stasis asset's price increase
 
 
 # Contribute:
